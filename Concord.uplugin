@@ -1,0 +1,68 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "EngineVersion": "5.0.0",
+    "FriendlyName": "Concord",
+    "Description": "Tools for creating and sampling from graphical probabilistic models that allow for real-time and adaptive generation of symbolic music. This is a beta! Please share bug reports, suggestions and comments on the subreddit: reddit.com/r/ConcordUE",
+    "Category": "AI",
+    "CreatedBy": "Jan Klimaschewski",
+    "CreatedByURL": "https://github.com/JanKXSKI",
+    "DocsURL": "https://github.com/JanKXSKI/Concord.git",
+    "MarketplaceURL": "",
+    "SupportURL": "https://www.reddit.com/r/ConcordUE/",
+    "EnabledByDefault": false,
+    "CanContainContent": true,
+    "IsBetaVersion": true,
+    "Installed": false,
+    "Modules": [
+        {
+            "Name": "Concord",
+            "Type": "Runtime",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordCore",
+            "Type": "Runtime",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordLearning",
+            "Type": "Editor",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordEditor",
+            "Type": "Editor",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordSystem",
+            "Type": "Runtime",
+            "LoadingPhase": "EarliestPossible",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordSystemEditor",
+            "Type": "Editor",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        },
+        {
+            "Name": "ConcordBridge",
+            "Type": "Runtime",
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
+        }
+    ],
+    "Plugins": [
+        {
+            "Name": "Metasound",
+            "Enabled": true
+        }
+    ]
+}
