@@ -47,7 +47,10 @@ namespace Metasound
                                const FConcordMetasoundPatternAssetReadRef& InPatternAsset,
                                const FTriggerReadRef& InStart,
                                const FTriggerReadRef& InStop,
+                               const FInt32ReadRef& InBPM,
+                               const FInt32ReadRef& InLinesPerBeat,
                                const FInt32ReadRef& InStartLine,
+                               const FInt32ReadRef& InNumberOfLines,
                                const FBoolReadRef& bInLoop)
             : Settings(InSettings)
             , context(nullptr)
@@ -55,10 +58,17 @@ namespace Metasound
             , PatternAsset(InPatternAsset)
             , Start(InStart)
             , Stop(InStop)
+            , BPM(InBPM)
+            , LinesPerBeat(InLinesPerBeat)
             , StartLine(InStartLine)
+            , NumberOfLines(InNumberOfLines)
             , bLoop(bInLoop)
             , LeftAudioOutput(FAudioBufferWriteRef::CreateNew(InSettings))
             , RightAudioOutput(FAudioBufferWriteRef::CreateNew(InSettings))
+            , CurrentBPM(-1)
+            , CurrentLinesPerBeat(-1)
+            , InitialNumberOfLines(0)
+            , CurrentNumberOfLines(-1)
             , bCleared(true)
         { XMPBuffer.SetNumUninitialized(Settings.GetNumFramesPerBlock() * 2); }
         ~FConcordTrackerModulePlayerOperator() { FreeXmp(); }
@@ -78,7 +88,10 @@ namespace Metasound
         FConcordMetasoundPatternAssetReadRef PatternAsset;
         FTriggerReadRef Start;
         FTriggerReadRef Stop;
+        FInt32ReadRef BPM;
+        FInt32ReadRef LinesPerBeat;
         FInt32ReadRef StartLine;
+        FInt32ReadRef NumberOfLines;
         FBoolReadRef bLoop;
 
         FAudioBufferWriteRef LeftAudioOutput;
@@ -86,11 +99,18 @@ namespace Metasound
 
         FGuid CurrentTrackerModuleGuid;
         FGuid CurrentPatternGuid;
+        int32 CurrentBPM;
+        int32 CurrentLinesPerBeat;
+        int32 InitialNumberOfLines;
+        int32 CurrentNumberOfLines;
         bool bCleared;
 
         bool ReinitXmp();
         bool LoadTrackerModule();
         void UpdatePattern();
+        void UpdateBPM();
+        void UpdateLinesPerBeat();
+        void CheckNumberOfLines();
         void ClearPattern();
         void SetPlayerStartPosition();
         void PlayModule(int32 StartFrame, int32 EndFrame);

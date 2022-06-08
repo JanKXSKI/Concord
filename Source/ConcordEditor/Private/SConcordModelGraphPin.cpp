@@ -136,7 +136,7 @@ TOptional<EConcordValueType> SConcordModelGraphPin::GetType() const
     {
         if (!Vertex) return EConcordValueType::Int;
         const int32 Index = Node->Pins.Find(GraphPinObj);
-        check(Index < Vertex->GetInputInfo().Num());
+        if (Index >= Vertex->GetInputInfo().Num()) return EConcordValueType::Error;
         if (TOptional<EConcordValueType> Type = Vertex->GetInputInfo()[Index].Type) return Type.GetValue();
         if (!GraphPinObj->LinkedTo.IsEmpty()) return Vertex->GetConnectedTransformers()[Index]->GetType();
         return {};

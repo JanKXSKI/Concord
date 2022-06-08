@@ -6,7 +6,7 @@
 using namespace Metasound;
 
 TUniquePtr<IOperator> FConcordTrackerModulePlayerNode::FOperatorFactory::CreateOperator(const FCreateOperatorParams& InParams, 
-                                                                          FBuildErrorArray& OutErrors) 
+                                                                                        FBuildErrorArray& OutErrors) 
 {
     const FConcordTrackerModulePlayerNode& Node = static_cast<const FConcordTrackerModulePlayerNode&>(InParams.Node);
     const FDataReferenceCollection& Inputs = InParams.InputDataReferences;
@@ -17,7 +17,10 @@ TUniquePtr<IOperator> FConcordTrackerModulePlayerNode::FOperatorFactory::CreateO
                                                            Inputs.GetDataReadReferenceOrConstruct<FConcordMetasoundPatternAsset>("Pattern"),
                                                            Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Start", InParams.OperatorSettings),
                                                            Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Stop", InParams.OperatorSettings),
+                                                           Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "BPM", InParams.OperatorSettings),
+                                                           Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Lines per Beat", InParams.OperatorSettings),
                                                            Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Start Line", InParams.OperatorSettings),
+                                                           Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Number of Lines", InParams.OperatorSettings),
                                                            Inputs.GetDataReadReferenceOrConstructWithVertexDefault<bool>(InputInterface, "Loop", InParams.OperatorSettings));
 }
 
@@ -27,7 +30,10 @@ const FVertexInterface& FConcordTrackerModulePlayerNode::DeclareVertexInterface(
                                                                         TInputDataVertexModel<FConcordMetasoundPatternAsset>("Pattern", INVTEXT("The pattern to play.")),
                                                                         TInputDataVertexModel<FTrigger>("Start", INVTEXT("Start the Player.")),
                                                                         TInputDataVertexModel<FTrigger>("Stop", INVTEXT("Stop the Player.")),
+                                                                        TInputDataVertexModel<int32>("BPM", INVTEXT("The playback speed."), 120),
+                                                                        TInputDataVertexModel<int32>("Lines per Beat", INVTEXT("The number of lines that make up a beat."), 4),
                                                                         TInputDataVertexModel<int32>("Start Line", INVTEXT("The line to start the Player at."), 0),
+                                                                        TInputDataVertexModel<int32>("Number of Lines", INVTEXT("The number of lines to play."), 32),
                                                                         TInputDataVertexModel<bool>("Loop", INVTEXT("Loop the Player instead of stopping when finished."), true)),
                                                   FOutputVertexInterface(TOutputDataVertexModel<FAudioBuffer>("Out Left", INVTEXT("Left Audio Output")),
                                                                          TOutputDataVertexModel<FAudioBuffer>("Out Right", INVTEXT("Right Audio Output"))));
@@ -72,7 +78,10 @@ FDataReferenceCollection FConcordTrackerModulePlayerOperator::GetInputs() const
     InputDataReferences.AddDataReadReference("Pattern", PatternAsset);
     InputDataReferences.AddDataReadReference("Start", Start);
     InputDataReferences.AddDataReadReference("Stop", Stop);
+    InputDataReferences.AddDataReadReference("BPM", BPM);
+    InputDataReferences.AddDataReadReference("Lines per Beat", LinesPerBeat);
     InputDataReferences.AddDataReadReference("Start Line", StartLine);
+    InputDataReferences.AddDataReadReference("Number of Lines", NumberOfLines);
     InputDataReferences.AddDataReadReference("Loop", bLoop);
     return InputDataReferences;
 }
@@ -90,6 +99,8 @@ void FConcordTrackerModulePlayerOperator::Execute()
     if (!ReinitXmp()) return;
     if (!bCleared && PatternAsset->GetProxy()->Guid != CurrentPatternGuid)
         UpdatePattern();
+    if (CurrentBPM != *BPM) UpdateBPM();
+    if (CurrentLinesPerBeat != *LinesPerBeat) UpdateLinesPerBeat();
 
     if (Stop->IsTriggeredInBlock())
     {
@@ -150,6 +161,8 @@ bool FConcordTrackerModulePlayerOperator::LoadTrackerModule()
     }
     xmp_set_player(context, XMP_PLAYER_MIX, 100);
     CurrentTrackerModuleGuid = ModuleProxy->Guid;
+    if (module_info.mod->trk > 0)
+        InitialNumberOfLines = module_info.mod->xxt[0]->rows;
     if (bCleared) ClearPattern();
     return true;
 }
@@ -171,7 +184,7 @@ void FConcordTrackerModulePlayerOperator::SetPlayerStartPosition()
         return;
     }
     xmp_set_player(context, XMP_PLAYER_MIX, 100);
-    const float RowDuration = (2.5f / module_info.mod->bpm) * module_info.mod->spd; // https://wiki.openmpt.org/Manual:_Song_Properties#Tempo_Mode
+    const float RowDuration = (2.5f / FMath::Clamp(CurrentBPM, 32, 255)) * FMath::Max(1, 24 / CurrentLinesPerBeat); // https://wiki.openmpt.org/Manual:_Song_Properties#Tempo_Mode
     int32 FramesToSkip = *StartLine * RowDuration * Settings.GetSampleRate();
     while (FramesToSkip > 0)
     {
@@ -184,12 +197,13 @@ void FConcordTrackerModulePlayerOperator::SetPlayerStartPosition()
 void FConcordTrackerModulePlayerOperator::PlayModule(int32 StartFrame, int32 EndFrame)
 {
     const int32 NumFrames = EndFrame - StartFrame;
-    xmp_play_buffer(context, XMPBuffer.GetData(), NumFrames * 2 * sizeof(int16), 0);
+    xmp_play_buffer(context, XMPBuffer.GetData(), NumFrames * 2 * sizeof(int16), *bLoop ? 0 : 1);
     for (int32 FrameIndex = 0; FrameIndex < NumFrames; ++FrameIndex)
     {
         LeftAudioOutput->GetData()[StartFrame + FrameIndex]  = XMPBuffer[FrameIndex * 2 + 0] / float(0x7FFF);
         RightAudioOutput->GetData()[StartFrame + FrameIndex] = XMPBuffer[FrameIndex * 2 + 1] / float(0x7FFF);
     }
+    CheckNumberOfLines();
 }
 
 void FConcordTrackerModulePlayerOperator::UpdatePattern()
@@ -244,6 +258,73 @@ void FConcordTrackerModulePlayerOperator::UpdatePattern()
         }
     }
     CurrentPatternGuid = PatternAsset->GetProxy()->Guid;
+    UpdateBPM();
+    UpdateLinesPerBeat();
+}
+
+void FConcordTrackerModulePlayerOperator::UpdateBPM()
+{
+    CurrentBPM = *BPM;
+    const int32 ClampedBPM = FMath::Clamp(CurrentBPM, 32, 255);
+    if (ClampedBPM != CurrentBPM)
+    {
+        UE_LOG(LogMetaSound, Error, TEXT("Tracker Module playback requires 32 <= BPM <= 255. Clamping."));
+    }
+    if (module_info.mod->trk == 0) return;
+    xmp_track* track = module_info.mod->xxt[0];
+    for (int32 row = 0; row < track->rows; ++row)
+    {
+        xmp_event& event = track->event[row];
+        event.f2t = 0x87;
+        event.f2p = ClampedBPM;
+    }
+}
+
+void FConcordTrackerModulePlayerOperator::UpdateLinesPerBeat()
+{
+    CurrentLinesPerBeat = *LinesPerBeat;
+    const int32 Speed = FMath::Max(1, 24 / CurrentLinesPerBeat);
+    if (24 % CurrentLinesPerBeat != 0)
+    {
+        UE_LOG(LogMetaSound, Error, TEXT("Tracker Module playback requires 24 % LinesPerBeat == 0. Truncating."));
+    }
+    if (module_info.mod->trk < 2)
+    {
+        UE_LOG(LogMetaSound, Error, TEXT("Tracker Module playback requires 2 tracks or more to dynamically set the LinesPerBeat."));
+        return;
+    }
+    xmp_track* track = module_info.mod->xxt[1];
+    for (int32 row = 0; row < track->rows; ++row)
+    {
+        xmp_event& event = track->event[row];
+        event.f2t = 0x0f;
+        event.f2p = Speed;
+    }
+}
+
+void FConcordTrackerModulePlayerOperator::CheckNumberOfLines()
+{
+    if (*NumberOfLines != CurrentNumberOfLines && *NumberOfLines > InitialNumberOfLines)
+    {
+        UE_LOG(LogMetaSound, Error, TEXT("Tracker Module playback does not support setting the number of lines above the initial number of lines in the module default pattern."));
+        return;
+    }
+    CurrentNumberOfLines = *NumberOfLines;
+    xmp_frame_info frame_info;
+    xmp_get_frame_info(context, &frame_info);
+    if (frame_info.row >= CurrentNumberOfLines)
+    {
+        if (*bLoop)
+        {
+            xmp_set_position(context, 0);
+            UE_LOG(LogMetaSound, Warning, TEXT("Tracker Module playback is currently unprecise and includes clicks when looping with a number of lines not equal to the one in the default pattern."));
+        }
+        else
+        {
+            ClearPattern();
+            bCleared = true;
+        }
+    }
 }
 
 void FConcordTrackerModulePlayerOperator::ClearPattern()

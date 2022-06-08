@@ -71,6 +71,8 @@ class CONCORDCORE_API UConcordPattern : public UObject, public IAudioProxyDataFa
 {
     GENERATED_BODY()
 public:
+    UConcordPattern();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Concord Pattern")
     FConcordPatternData PatternData;
 
@@ -86,12 +88,26 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Preview", meta = (ClampMin = 0))
     int32 PreviewStartLine;
+
+    UPROPERTY(EditAnywhere, Category = "Preview", meta = (ClampMin = 1))
+    int32 PreviewBPM;
+
+    UPROPERTY(EditAnywhere, Category = "Preview", meta = (ClampMin = 1))
+    int32 PreviewLinesPerBeat;
+
+    UPROPERTY(EditAnywhere, Category = "Preview", meta = (ClampMin = 1))
+    int32 PreviewNumberOfLines;
 #endif
 #if WITH_EDITOR
     void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
 
     UFUNCTION(BlueprintPure, Category = "Concord Pattern")
     FConcordCrateData GetCrate() const;
+
+    double PreviewStartSeconds;
+    void StartPreview();
+    void StopPreview();
+    int32 GetPreviewLine(double Time) const;
 #endif
     TUniquePtr<Audio::IProxyData> CreateNewProxyData(const Audio::FProxyDataInitParams& InitParams) override;
 private:

@@ -34,6 +34,45 @@ public:
     UConcordOutput* GetOutput() { return Cast<UConcordOutput>(Vertex); }
 };
 
+class SConcordModelGraphOutputShapeLines : public SLeafWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SConcordModelGraphOutputShapeLines){}
+    SLATE_END_ARGS()
+
+    void Construct(const FArguments& InArgs, TSharedPtr<STextBlock> InTextWidget);
+    FVector2D ComputeDesiredSize(float) const override;
+    int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
+    void SetShape(const FConcordShape& InShape);
+private:
+    void PaintSegment(int32 DimIndex, FVector2D Offset, float Height, const FGeometry& AllottedGeometry, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FSlateBrush& Brush) const;
+
+    TSharedPtr<STextBlock> TextWidget;
+    TArray<int32> Shape;
+
+    static const float LineWidth;
+    static const float LinePadding;
+    static const float LineGap;
+};
+
+class SConcordModelGraphOutputHighlight : public SLeafWidget
+{
+public:
+    SLATE_BEGIN_ARGS(SConcordModelGraphOutputHighlight){}
+    SLATE_END_ARGS()
+
+    void Construct(const FArguments& InArgs, TSharedPtr<STextBlock> InTextWidget, TWeakObjectPtr<class UConcordPattern> InPreviewPatternPtr);
+    FVector2D ComputeDesiredSize(float) const override;
+    int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
+    void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+
+    void SetNeedsHighlight(bool bNeedsHighlight, int32 NumValues);
+private:
+    TSharedPtr<STextBlock> TextWidget;
+    TWeakObjectPtr<class UConcordPattern> PreviewPatternPtr;
+    int32 PreviewLine, PreviewNumberOfLines;
+};
+
 class SConcordModelGraphOutput : public SConcordModelGraphSink
 {
 private:
@@ -41,9 +80,13 @@ private:
     TSharedRef<SWidget> CreateAdditionalSinkContent() override;
     void OnIntOutputValuesChanged(const TArray<int32>& Values);
     void OnFloatOutputValuesChanged(const TArray<float>& Values);
+    bool CheckHighlightAndGetIsNotes(int32 NumValues) const;
+    static FString LexIntValue(int32 Value, bool bIsNotes);
     EVisibility GetOutputValuesTextVisibility() const;
 
     TSharedPtr<STextBlock> OutputValuesText;
+    TSharedPtr<SConcordModelGraphOutputShapeLines> ShapeLines;
+    TSharedPtr<SConcordModelGraphOutputHighlight> Highlight;
 };
 
 USTRUCT()

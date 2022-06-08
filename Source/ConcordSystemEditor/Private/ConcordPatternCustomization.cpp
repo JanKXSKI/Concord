@@ -53,10 +53,15 @@ void FConcordPatternCustomization::Play() const
 	UAudioComponent* PreviewAudioComponent = GEditor->PlayPreviewSound(CustomizedPattern->PreviewSound);
 	PreviewAudioComponent->SetObjectParameter("Concord.Pattern", CustomizedPattern.Get());
 	PreviewAudioComponent->SetIntParameter("Concord.StartLine", CustomizedPattern->PreviewStartLine);
+	PreviewAudioComponent->SetIntParameter("Concord.BPM", CustomizedPattern->PreviewBPM);
+	PreviewAudioComponent->SetIntParameter("Concord.LinesPerBeat", CustomizedPattern->PreviewLinesPerBeat);
+	PreviewAudioComponent->SetIntParameter("Concord.NumberOfLines", CustomizedPattern->PreviewNumberOfLines);
 	PreviewAudioComponent->SetTriggerParameter("Concord.Start");
+	CustomizedPattern->StartPreview();
 }
 
 void FConcordPatternCustomization::Stop() const
 {
 	GEditor->ResetPreviewAudioComponent();
+	CustomizedPattern->StopPreview();
 }

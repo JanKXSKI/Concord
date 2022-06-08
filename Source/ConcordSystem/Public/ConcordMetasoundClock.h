@@ -41,18 +41,18 @@ namespace Metasound
                               const FTriggerReadRef& InStart,
                               const FTriggerReadRef& InStop,
                               const FFloatReadRef& InBPM,
-                              const FInt32ReadRef& InNumberOfLines,
                               const FInt32ReadRef& InLinesPerBeat,
                               const FInt32ReadRef& InStartLine,
+                              const FInt32ReadRef& InNumberOfLines,
                               const FFloatReadRef& InShuffle,
                               const FBoolReadRef& bInLoop)
             : Settings(InSettings)
             , Start(InStart)
             , Stop(InStop)
             , BPM(InBPM)
-            , NumberOfLines(InNumberOfLines)
             , LinesPerBeat(InLinesPerBeat)
             , StartLine(InStartLine)
+            , NumberOfLines(InNumberOfLines)
             , Shuffle(InShuffle)
             , bLoop(bInLoop)
             , OnLine(FTriggerWriteRef::CreateNew(InSettings))
@@ -73,9 +73,9 @@ namespace Metasound
         FTriggerReadRef Start;
         FTriggerReadRef Stop;
         FFloatReadRef BPM;
-        FInt32ReadRef NumberOfLines;
         FInt32ReadRef LinesPerBeat;
         FInt32ReadRef StartLine;
+        FInt32ReadRef NumberOfLines;
         FFloatReadRef Shuffle;
         FBoolReadRef bLoop;
 

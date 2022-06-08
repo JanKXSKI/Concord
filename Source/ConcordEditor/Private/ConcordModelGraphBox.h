@@ -40,6 +40,7 @@ public:
     void AllocateDefaultPins() override;
     void NodeConnectionListChanged() override;
     void PostPasteNode() override;
+    void RemoveRandomVariablePin(UEdGraphPin* Pin);
     void DestroyNode() override;
 
     UPROPERTY(EditAnywhere, Category = "Box")

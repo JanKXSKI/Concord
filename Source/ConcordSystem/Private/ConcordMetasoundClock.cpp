@@ -15,9 +15,9 @@ TUniquePtr<IOperator> FConcordClockNode::FOperatorFactory::CreateOperator(const 
                                              Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Start", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Stop", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstructWithVertexDefault<float>(InputInterface, "BPM", InParams.OperatorSettings),
-                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Number of Lines", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Lines per Beat", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Start Line", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Number of Lines", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstructWithVertexDefault<float>(InputInterface, "Shuffle", InParams.OperatorSettings),
                                              Inputs.GetDataReadReferenceOrConstructWithVertexDefault<bool>(InputInterface, "Loop", InParams.OperatorSettings));
 }
@@ -27,9 +27,9 @@ const FVertexInterface& FConcordClockNode::DeclareVertexInterface()
     static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertexModel<FTrigger>("Start", INVTEXT("Start the Clock.")),
                                                                         TInputDataVertexModel<FTrigger>("Stop", INVTEXT("Stop the Clock.")),
                                                                         TInputDataVertexModel<float>("BPM", INVTEXT("BPM."), 120.0f),
-                                                                        TInputDataVertexModel<int32>("Number of Lines", INVTEXT("Number of lines in the pattern."), 32),
                                                                         TInputDataVertexModel<int32>("Lines per Beat", INVTEXT("Number of lines for that make up one beat."), 4),
                                                                         TInputDataVertexModel<int32>("Start Line", INVTEXT("The line to start the clock at."), 0),
+                                                                        TInputDataVertexModel<int32>("Number of Lines", INVTEXT("Number of lines in the pattern."), 32),
                                                                         TInputDataVertexModel<float>("Shuffle", INVTEXT("Moves every second line towards the next."), 0.0f),
                                                                         TInputDataVertexModel<bool>("Loop", INVTEXT("Loop the Clock instead of stopping when finished."), true)),
                                                   FOutputVertexInterface(TOutputDataVertexModel<FTrigger>("On Line", INVTEXT("On line trigger.")),
@@ -76,9 +76,9 @@ FDataReferenceCollection FConcordClockOperator::GetInputs() const
     InputDataReferences.AddDataReadReference("Start", Start);
     InputDataReferences.AddDataReadReference("Stop", Stop);
     InputDataReferences.AddDataReadReference("BPM", BPM);
-    InputDataReferences.AddDataReadReference("Number of Lines", NumberOfLines);
     InputDataReferences.AddDataReadReference("Lines per Beat", LinesPerBeat);
     InputDataReferences.AddDataReadReference("Start Line", StartLine);
+    InputDataReferences.AddDataReadReference("Number of Lines", NumberOfLines);
     InputDataReferences.AddDataReadReference("Shuffle", Shuffle);
     InputDataReferences.AddDataReadReference("Loop", bLoop);
     return InputDataReferences;

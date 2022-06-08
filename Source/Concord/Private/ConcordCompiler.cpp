@@ -203,10 +203,8 @@ TOptional<FConcordError> FConcordCompiler::SetupInstance(const FName& InstanceNa
         }
         else
         {
-            CompositePrefix += InstancePrefixExtension;
             FResult CompileResult = Compile(Model, Model->DefaultSamplerFactory->GetCycleMode());
-            if (CompileResult.Error) return MakeCompositeError(CompileResult.Error.GetValue());
-            CompositePrefix.LeftChopInline(InstancePrefixExtension.Len(), false);
+            if (CompileResult.Error) return MakeCompositeError(FConcordError { nullptr, FString::Printf(TEXT("Failed to compile instance of model %s: "), *Model->GetName()) + CompileResult.Error.GetValue().Message });
             CompiledModels.Add(Model, CompileResult.FactorGraph);
             InstanceFactorGraph = CompileResult.FactorGraph;
             Instance->UpdateCachedInputOutputInfo();

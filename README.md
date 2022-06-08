@@ -113,7 +113,9 @@ Factor nodes treat their input as a multidimensional array of scores and thus de
 
 ### Outputs
 
-Output nodes can be queried for their values from outside the model and define the pattern that is computed from the random variables and the parameters. Any transformers involved in computing the output values do not affect sampling performance, since outputs are only evaluated when needed. When creating probabilistic models of symbolic music, it is useful to consider a reduced representation, like scale degrees instead of MIDI note numbers. The transformation from the reduced space to symbolic music that can be played back with a sound generator does not affect sampling performance if no factor relies on the output pattern data. Output nodes have a *Display Output* property that can be used to show the computed values when sampling a variation inside the editor, which can be a useful tool for debugging and sanity checks.
+Output nodes can be queried for their values from outside the model and define the pattern that is computed from the random variables and the parameters. Outputs corresponding to columns in a pattern must follow the following naming convention: *track/type:index*, where *track* is the name of a track in the pattern, *type* is one of the column types discussed above, and *index* is a non-negative integer denoting a channel within the track. The *:index* part of the name is optional, an index of 0 is assumed if it is missing. An example of a valid output name for a column in a pattern is: *Piano/Notes:1*, which assigns the values of the output to the note column of channel *1* of the *Piano* track.
+
+Any transformers involved in computing the output values do not affect sampling performance, since outputs are only evaluated when needed. When creating probabilistic models of symbolic music, it is useful to consider a reduced representation, like scale degrees instead of MIDI note numbers. The transformation from the reduced space to symbolic music that can be played back with a sound generator does not affect sampling performance if no factor relies on the output pattern data. Output nodes have a *Display Output* property that can be used to show the computed values when sampling a variation inside the editor, which can be a useful tool for debugging and sanity checks.
     
 ### Composites
 
@@ -179,7 +181,7 @@ There are two ways MetaSounds can be leveraged in combination with Concord: eith
 
 ### MetaSounds DSP Graphs
 
-When passing a Concord pattern to a MetaSound graph for audio generation, specific columns can be retrieved from the pattern inside the MetaSound by specifying a track name, column type and column index in the *Column Path* input of the *Concord Get Column* MetaSound node. Track name and column type are delimited by a slash, the column index is preceded by a colon. Type and index are optional and correspond to *Notes* and 0 respectively if missing. MetaSound's array and trigger functionalities can be used to drive sound generation based on the pattern data. A clock node is provided for convenient time keeping when playing back patterns this way. 
+When passing a Concord pattern to a MetaSound graph for audio generation, specific columns can be retrieved from the pattern inside the MetaSound by specifying a track name, column type and column index in the *Column Path* input of the *Concord Get Column* MetaSound node. Track name and column type are delimited by a slash, the column index is preceded by a colon. The index is optional and corresponds to 0 if missing. MetaSound's array and trigger functionalities can be used to drive sound generation based on the pattern data. A clock node is provided for convenient time keeping when playing back patterns this way. 
 
 ### Tracker Module Player
 

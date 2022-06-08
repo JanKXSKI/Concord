@@ -10,7 +10,7 @@ FText UConcordModelGraphConsumer::GetPinDisplayName(const UEdGraphPin* Pin) cons
     if (Pin->Direction == EGPD_Output) return FText::FromName(Pin->PinName);
     int32 Index = Pins.Find(const_cast<UEdGraphPin*>(Pin));
     check(Index != INDEX_NONE && Vertex);
-    check(Index < Vertex->GetInputInfo().Num());
+    if (Index >= Vertex->GetInputInfo().Num()) return INVTEXT("This pin should not exist! Remove and re-add the node.");
     return Vertex->GetInputInfo()[Index].DisplayName;
 }
 

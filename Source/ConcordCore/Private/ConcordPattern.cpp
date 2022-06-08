@@ -13,7 +13,6 @@ TOptional<FConcordColumnPath> FConcordColumnPath::Parse(FStringView PathView)
         if (Path.ColumnIndex < 0) return {};
         PathView.LeftInline(DelimiterPosition);
     }
-    Path.ColumnType = Note;
     if (PathView.FindLastChar(TEXT('/'), DelimiterPosition))
     {
         if (DelimiterPosition + 1 == PathView.Len()) return {};
@@ -39,6 +38,7 @@ TOptional<FConcordColumnPath> FConcordColumnPath::Parse(FStringView PathView)
         }
         PathView.LeftInline(DelimiterPosition);
     }
+    else return {}; // require column type
     PathView.TrimStartAndEndInline();
     Path.TrackName = PathView;
     return Path;
@@ -50,6 +50,15 @@ void FConcordColumn::AddMidiNoop()
     VolumeValues.Add(0);
     DelayValues.Add(0);
 }
+
+UConcordPattern::UConcordPattern()
+#if WITH_EDITOR
+    : PreviewBPM(120)
+    , PreviewLinesPerBeat(4)
+    , PreviewNumberOfLines(32)
+    , PreviewStartSeconds(-1)
+#endif
+{}
 
 #if WITH_EDITOR
 void UConcordPattern::GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const
@@ -83,6 +92,24 @@ FConcordCrateData UConcordPattern::GetCrate() const
         }
     }
     return MoveTemp(CrateData);
+}
+
+void UConcordPattern::StartPreview()
+{
+    PreviewStartSeconds = FPlatformTime::Seconds();
+}
+
+void UConcordPattern::StopPreview()
+{
+    PreviewStartSeconds = -1.0;
+}
+
+int32 UConcordPattern::GetPreviewLine(double Time) const
+{
+    if (PreviewStartSeconds < 0.0) return -1;
+    const double Minutes = (Time - PreviewStartSeconds) / 60;
+    const double Line = (PreviewBPM * Minutes) * PreviewLinesPerBeat + PreviewStartLine;
+    return int32(Line) % PreviewNumberOfLines;
 }
 #endif
 

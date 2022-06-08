@@ -49,12 +49,12 @@ void UConcordModelGraphBox::SyncPins()
         while (RVPinsNum() < DefaultSize)
             CreatePin(EGPD_Output, FName("RV"), FName("RVPin", RVPinsNum()));
         while (RVPinsNum() > DefaultSize)
-            RemovePin(Pins.Last());
+            RemoveRandomVariablePin(Pins.Last());
     }
     else
     {
         while (RVPinsNum() > 0)
-            RemovePin(Pins.Last());
+            RemoveRandomVariablePin(Pins.Last());
     }
 
     OnNodeChanged.Broadcast();
@@ -100,6 +100,14 @@ void UConcordModelGraphBox::PostPasteNode()
 {
     UConcordModelGraphConsumer::PostPasteNode();
     SyncPins();
+}
+
+void UConcordModelGraphBox::RemoveRandomVariablePin(UEdGraphPin* Pin)
+{
+    TSet<UEdGraphNode*> ConnectedNodes;
+    for (UEdGraphPin* LinkedPin : Pin->LinkedTo) ConnectedNodes.Add(LinkedPin->GetOwningNode());
+    RemovePin(Pin);
+    for (UEdGraphNode* Node : ConnectedNodes) Cast<UConcordModelGraphConsumer>(Node)->SyncModelConnections();
 }
 
 void UConcordModelGraphBox::DestroyNode()
