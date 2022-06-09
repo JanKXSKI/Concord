@@ -1,4 +1,4 @@
-// Copyright Jan Klimaschewski. All Rights Reserved.
+// Copyright 2022 Jan Klimaschewski. All Rights Reserved.
 
 #include "ConcordModelFactory.h"
 #include "ConcordModel.h"

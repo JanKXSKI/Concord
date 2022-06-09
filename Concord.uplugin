@@ -20,43 +20,43 @@
             "Name": "Concord",
             "Type": "Runtime",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordCore",
             "Type": "Runtime",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordLearning",
             "Type": "Editor",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordEditor",
             "Type": "Editor",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordSystem",
             "Type": "Runtime",
             "LoadingPhase": "EarliestPossible",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordSystemEditor",
             "Type": "Editor",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         },
         {
             "Name": "ConcordBridge",
             "Type": "Runtime",
             "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [ "Win64", "Mac" ]
+            "WhitelistPlatforms": [ "Win64" ]
         }
     ],
     "Plugins": [

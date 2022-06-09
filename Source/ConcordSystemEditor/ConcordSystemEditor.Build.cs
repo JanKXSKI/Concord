@@ -1,4 +1,4 @@
-// Copyright Jan Klimaschewski. All Rights Reserved.
+// Copyright 2022 Jan Klimaschewski. All Rights Reserved.
 
 using System.IO;
 using UnrealBuildTool;
@@ -13,7 +13,8 @@ public class ConcordSystemEditor : ModuleRules
 
         PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "MetasoundGraphCore", "JsonUtilities", "Json", "Slate", "SlateCore", "AudioExtensions", "MainFrame", "PropertyEditor", "ApplicationCore" });
 
-        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty/midifile/include"));
+        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../ThirdParty"));
+        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../ThirdParty/midifile/include"));
         bEnableUndefinedIdentifierWarnings = false;
 
         if (Target.Platform == UnrealTargetPlatform.Win64)
