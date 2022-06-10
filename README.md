@@ -1,6 +1,10 @@
 # Concord
 Concord is an Unreal Engine plugin for sampling symbolic music from graphical probabilistic models in real time. Put another way, Concord lets you create and play intricate musical dice games. It aims to enable intuitive editing and efficient sampling in an interactive setting by leveraging the considerable capabilities and flexibility of the Unreal Engine.
 
+## Tutorials
+
+Check out the Concord tutorial playlist on YouTube: https://youtube.com/playlist?list=PLKchFlXMNqi5Dwlnq4IugVnf0bt25QG_c
+
 ## Core Functionality
 
 At its core, Concord is about creating, editing and sampling from factor graphs over discrete random variables. The resulting distributions can be affected by dynamic parameters and observations. After running a sampler to find a likely configuration for the values of the discrete random variables, musical pattern data can be computed from these values and fed to a sound generator such as Unreal Engine's MetaSounds.
