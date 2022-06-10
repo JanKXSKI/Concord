@@ -28,6 +28,7 @@ public:
     FText GetBaseToolkitName() const override;
     FString GetWorldCentricTabPrefix() const override;
     FLinearColor GetWorldCentricTabColorScale() const override;
+    void OnClose() override;
 
     // FEditorUndoClient interface
     void PostUndo(bool bSuccess) override;

@@ -31,6 +31,7 @@
 #include "ConcordCrate.h"
 #include "ConcordCrateFactory.h"
 #include "AssetToolsModule.h"
+#include "Components/AudioComponent.h"
 
 void FConcordModelEditorToolkit::Initialize(UConcordModel* InConcordModel)
 {
@@ -130,6 +131,16 @@ FString FConcordModelEditorToolkit::GetWorldCentricTabPrefix() const
 FLinearColor FConcordModelEditorToolkit::GetWorldCentricTabColorScale() const
 {
     return FLinearColor();
+}
+
+void FConcordModelEditorToolkit::OnClose()
+{
+    if (!ConcordModel) return;
+    if (!ConcordModel->LatestPatternSampledFromEditor) return;
+    ConcordModel->LatestPatternSampledFromEditor->StopPreview();
+    if (!GEditor->GetPreviewAudioComponent()) return;
+    if (GEditor->GetPreviewAudioComponent()->Sound == ConcordModel->LatestPatternSampledFromEditor->PreviewSound)
+        GEditor->ResetPreviewAudioComponent();
 }
 
 void FConcordModelEditorToolkit::PostUndo(bool bSuccess)
