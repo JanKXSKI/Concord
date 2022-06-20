@@ -44,8 +44,9 @@ public:
     const FConcordObservationMask& GetMask() const { return Mask; }
     const TArray<int32>& GetIntParameters() const { return IntParameters; }
     const TArray<FFloatType>& GetFloatParameters() const { return FloatParameters; }
-    TArrayView<int32> GetIntParametersView(const FConcordFactorGraphBlock& Block) { return MakeArrayView(IntParameters.GetData() + Block.Offset, Block.Size); }
-    TArrayView<FFloatType> GetFloatParametersView(const FConcordFactorGraphBlock& Block) { return MakeArrayView(FloatParameters.GetData() + Block.Offset, Block.Size); }
+    template<typename FValue> TArrayView<FValue> GetParametersView(const FConcordFactorGraphBlock& Block);
+    template<> inline TArrayView<int32> GetParametersView(const FConcordFactorGraphBlock& Block) { return MakeArrayView(IntParameters.GetData() + Block.Offset, Block.Size); }
+    template<> inline TArrayView<FFloatType> GetParametersView(const FConcordFactorGraphBlock& Block) { return MakeArrayView(FloatParameters.GetData() + Block.Offset, Block.Size); }
 private:
     template<typename FValue> bool TrySetParameterBlock(const FName& BlockName, const TArray<FValue>& Values);
     template<typename FValue> bool TryUnsetParameterBlock(const FName& BlockName);

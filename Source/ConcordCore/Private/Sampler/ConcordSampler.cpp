@@ -66,32 +66,38 @@ void FConcordSampler::RunInstanceSamplers()
     for (const auto& InstanceNameSamplerPair : FactorGraph->GetInstanceSamplers())
     {
         const TSharedRef<FConcordSampler>& InstanceSampler = InstanceNameSamplerPair.Value;
+        InstanceSampler->GetEnvironment()->SetMaskAndParametersFromStagingArea();
+        InstanceSampler->GetVariationFromEnvironment();
         for (const auto& NameBlockPair : InstanceSampler->FactorGraph->GetParameterBlocks<int32>())
-        {
-            const FName OutputName = FName(InstanceNameSamplerPair.Key.ToString() + TEXT(".") + NameBlockPair.Key.ToString() + TEXT(".Source"));
-            auto* Output = FactorGraph->GetOutputs().Find(OutputName);
-            if (!Output) continue;
-            (*Output)->Eval(GetExpressionContext(), InstanceSampler->GetEnvironment()->GetIntParametersView(NameBlockPair.Value));
-        }
+            FillInstanceInputs<int32>(InstanceNameSamplerPair, NameBlockPair);
         for (const auto& NameBlockPair : InstanceSampler->FactorGraph->GetParameterBlocks<float>())
-        {
-            if (!NameBlockPair.Key.ToString().EndsWith(TEXT(".Source"))) continue;
-            FactorGraph->GetOutputs()[NameBlockPair.Key]->Eval(GetExpressionContext(), InstanceSampler->GetEnvironment()->GetFloatParametersView(NameBlockPair.Value));
-        }
+            FillInstanceInputs<float>(InstanceNameSamplerPair, NameBlockPair);
         InstanceSampler->SampleVariationSync();
+        InstanceSampler->GetEnvironment()->ReturnSampledVariationToStagingArea(InstanceSampler->GetVariation());
         for (const auto& NameOutputPair : InstanceSampler->FactorGraph->GetOutputs())
         {
             const auto& Output = NameOutputPair.Value;
             const FName ParameterName = FName(InstanceNameSamplerPair.Key.ToString() + TEXT(".") + NameOutputPair.Key.ToString() + TEXT(".Target"));
             switch (Output->GetType())
             {
-            case EConcordValueType::Int: Output->Eval(InstanceSampler->GetExpressionContext(), Environment->GetIntParametersView(FactorGraph->GetParameterBlocks<int32>()[ParameterName])); break;
-            case EConcordValueType::Float: Output->Eval(InstanceSampler->GetExpressionContext(), Environment->GetFloatParametersView(FactorGraph->GetParameterBlocks<float>()[ParameterName])); break;
+            case EConcordValueType::Int: Output->Eval(InstanceSampler->GetExpressionContext(), Environment->GetParametersView<int32>(FactorGraph->GetParameterBlocks<int32>()[ParameterName])); break;
+            case EConcordValueType::Float: Output->Eval(InstanceSampler->GetExpressionContext(), Environment->GetParametersView<float>(FactorGraph->GetParameterBlocks<float>()[ParameterName])); break;
             default: checkNoEntry(); break;
             }
         }
     }
 }
+
+template<typename FValue>
+void FConcordSampler::FillInstanceInputs(const TPair<FName, TSharedRef<FConcordSampler>>& InstanceSampler, const TPair<FName, FConcordFactorGraphBlock>& Parameter)
+{
+    const FName OutputName = FName(InstanceSampler.Key.ToString() + TEXT(".") + Parameter.Key.ToString() + TEXT(".Source"));
+    auto* Output = FactorGraph->GetOutputs().Find(OutputName);
+    if (!Output) return;
+    (*Output)->Eval(GetExpressionContext(), InstanceSampler.Value->GetEnvironment()->GetParametersView<FValue>(Parameter.Value));
+}
+template void FConcordSampler::FillInstanceInputs<int32>(const TPair<FName, TSharedRef<FConcordSampler>>&, const TPair<FName, FConcordFactorGraphBlock>&);
+template void FConcordSampler::FillInstanceInputs<float>(const TPair<FName, TSharedRef<FConcordSampler>>&, const TPair<FName, FConcordFactorGraphBlock>&);
 
 void FConcordSampler::SetColumnsFromOutputs(FConcordPatternData& OutPatternData) const
 {

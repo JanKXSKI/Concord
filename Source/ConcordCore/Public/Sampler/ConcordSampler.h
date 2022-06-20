@@ -55,6 +55,8 @@ protected:
     FConcordFactorGraphSamplingUtils<float> SamplingUtils;
 private:
     void RunInstanceSamplers();
+    template<typename FValue>
+    void FillInstanceInputs(const TPair<FName, TSharedRef<FConcordSampler>>& InstanceSampler, const TPair<FName, FConcordFactorGraphBlock>& Parameter);
     void SetColumnFromOutput(const FConcordFactorGraph<float>::FOutput* Output, TArray<int32>& TargetArray, TArray<int32>* PreviousArray) const;
 };
 

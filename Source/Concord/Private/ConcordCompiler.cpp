@@ -186,6 +186,11 @@ TOptional<FConcordError> FConcordCompiler::SetupInstance(const FName& InstanceNa
 {
     if (!Instance->Model) return {};
     if (!Instance->Model->DefaultSamplerFactory) return MakeCompositeError({ Instance, TEXT("A model that is instanced needs to have its default sampler factory set.") });
+
+    check(!VisitedVertices.Contains(Instance));
+    if (TOptional<FConcordError> Error = Instance->SetupGraph(VisitedVertices))
+        return MakeCompositeError(Error.GetValue());
+
     const FString InstancePrefixExtension = InstanceName.ToString() + TEXT(".");
     TSharedPtr<const FConcordFactorGraph<float>> InstanceFactorGraph;
     if (const UConcordNativeModel* NativeModel = Cast<UConcordNativeModel>(Instance->Model))
