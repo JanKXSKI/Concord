@@ -374,16 +374,34 @@ FString FConcordModelEditorToolkit::GetSelectedNodesString() const
     FString NodeString;
     const FGraphPanelSelectionSet SelectedNodes = GraphEditor->GetSelectedNodes();
     const FExportObjectInnerContext Context;
+    TMap<UConcordModelGraphNode*, TStrongObjectPtr<UConcordVertex>> VertexCache;
     for (UObject* NodeObj : SelectedNodes)
     {
         FStringOutputDevice Archive;
         UConcordModelGraphNode* Node = Cast<UConcordModelGraphNode>(NodeObj);
+
+        TArray<TStrongObjectPtr<UConcordTransformer>> ConnectedTransformerCache;
+        for (int32 ConnectedTransformerIndex = 0; ConnectedTransformerIndex < Node->Vertex->ConnectedTransformers.Num(); ++ConnectedTransformerIndex)
+        {
+            ConnectedTransformerCache.Add(TStrongObjectPtr(Node->Vertex->ConnectedTransformers[ConnectedTransformerIndex]));
+            Node->Vertex->ConnectedTransformers[ConnectedTransformerIndex] = nullptr; // stops warnings on pasting
+        }
+
         UExporter::ExportToOutputDevice(&Context, Node->Vertex, NULL, Archive, TEXT("copy"), 0, PPF_Copy|PPF_Delimited);
         Node->SerializedVertex = Archive;
+
+        for (int32 ConnectedTransformerIndex = 0; ConnectedTransformerIndex < Node->Vertex->ConnectedTransformers.Num(); ++ConnectedTransformerIndex)
+            Node->Vertex->ConnectedTransformers[ConnectedTransformerIndex] = ConnectedTransformerCache[ConnectedTransformerIndex].Get();
+
+        VertexCache.Add(Node, TStrongObjectPtr(Node->Vertex));
+        Node->Vertex = nullptr; // stops warnings on pasting
     }
     FEdGraphUtilities::ExportNodesToText(SelectedNodes, NodeString);
-    for (UObject* NodeObj : SelectedNodes)
-        Cast<UConcordModelGraphNode>(NodeObj)->SerializedVertex.Empty();
+    for (const auto& NodeVertexPair : VertexCache)
+    {
+        NodeVertexPair.Key->SerializedVertex.Empty();
+        NodeVertexPair.Key->Vertex = NodeVertexPair.Value.Get();
+    }
     return MoveTemp(NodeString);
 }
 

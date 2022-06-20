@@ -60,6 +60,7 @@ private:
     friend class UConcordModelGraphConsumer;
     friend class UConcordModelGraphModelNode;
     friend class FConcordModelGraphSync;
+    friend class FConcordModelEditorToolkit;
 #endif // WITH_EDITOR
 };
 
