@@ -51,7 +51,7 @@ UObject* UConcordPatternFactory::FactoryCreateFile(UClass* InClass, UObject* InP
         }
         Pattern->PatternImporter = DuplicateObject<UConcordPatternMidiImporter>(ConfiguredMidiImporter, Pattern);
     }
-    else if (Extension == TEXT("pattern"))
+    else if (Extension == TEXT("ccdp"))
     {
         Pattern->PatternImporter = NewObject<UConcordPatternImporter>(Pattern, UConcordPatternJsonImporter::StaticClass());
     }
