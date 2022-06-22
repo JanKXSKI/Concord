@@ -7,6 +7,8 @@ UConcordBaumWelchLearnerFactory::UConcordBaumWelchLearnerFactory()
     : bSetDefaultCrates(false)
     , ParameterInitDeviation(1.0)
     , ParameterMutationDeviation(1.0)
+    , LearningRate(1.0)
+    , StabilityBias(2.0f)
 {}
 
 bool UConcordBaumWelchLearnerFactory::CheckAndInit()
@@ -56,6 +58,8 @@ FConcordBaumWelchLearnerSettings UConcordBaumWelchLearnerFactory::MakeSettings()
     FConcordBaumWelchLearnerSettings Settings { GetFactorGraph(), MakeEnvironment(), Names };
     Settings.InitDeviation = ParameterInitDeviation;
     Settings.MutationDeviation = ParameterMutationDeviation;
+    Settings.LearningRate = LearningRate;
+    Settings.StabilityBias = StabilityBias;
     return MoveTemp(Settings);
 }
 

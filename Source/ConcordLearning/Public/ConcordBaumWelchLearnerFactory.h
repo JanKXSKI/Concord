@@ -26,6 +26,12 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Baum Welch", meta = (MinValue = 0))
     double ParameterMutationDeviation;
+
+    UPROPERTY(EditAnywhere, Category = "Baum Welch", meta = (MinValue = 0))
+    double LearningRate;
+
+    UPROPERTY(EditAnywhere, Category = "Baum Welch", meta = (MinValue = 0))
+    float StabilityBias;
 protected:
     TSharedRef<const FConcordFactorGraph<float>> GetFactorGraph() const;
     TUniquePtr<FConcordFactorGraphEnvironment<float>> MakeEnvironment() const;

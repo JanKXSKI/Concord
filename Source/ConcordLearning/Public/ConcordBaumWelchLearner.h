@@ -24,6 +24,8 @@ struct FConcordBaumWelchLearnerSettings
     FConcordBaumWelchNames Names;
     double InitDeviation;
     double MutationDeviation;
+    double LearningRate;
+    float StabilityBias;
 };
 
 class CONCORDLEARNING_API FConcordBaumWelchLearner : public FConcordLearner
@@ -44,7 +46,7 @@ private:
     const FConcordFactorHandleBase<float>* GetNextHandle(int32 FlatRandomVariableIndex) const;
     void SetAlpha(int32 FlatRandomVariableIndex, const FConcordFactorHandleBase<float>* NextHandle);
     void SetBeta(int32 FlatRandomVariableIndex, int32 AlphaValue, const FConcordFactorHandleBase<float>* PreviousHandle, const TArrayView<float>& TransitionScores);
-    static float ProbToScore(double Prob);
+    float ProbToScore(double Prob) const;
 
     FConcordBaumWelchLearnerSettings Settings;
     FConcordFactorGraphSumProduct<float, double, false> SumProduct;

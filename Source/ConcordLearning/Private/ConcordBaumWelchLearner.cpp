@@ -52,31 +52,51 @@ void FConcordBaumWelchLearner::Mutate(double Deviation)
 
 double FConcordBaumWelchLearner::UpdateAndGetLoss()
 {
-    SumProduct.RunInward();
-    const double LogZ = log(SumProduct.GetZ());
-
-    double LogOs = 0.0;
-    InitialNumerators.Reset(); InitialNumerators.AddZeroed(HiddenStateCount);
-    TransitionNumerators.Reset(); TransitionNumerators.AddZeroed(HiddenStateCount * HiddenStateCount);
-    for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
+    for (int32 UpdateIndex = 0; UpdateIndex < GetNumUpdatesToDo(); ++UpdateIndex)
     {
-        const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Settings.Names.Emissions[EmissionIndex].ObservedBox];
-        const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
-        EmissionNumerators[EmissionIndex].Reset(); EmissionNumerators[EmissionIndex].AddZeroed(HiddenStateCount * ObservedStateCount);
-    }
-    Denominators.Reset(); Denominators.AddZeroed(HiddenStateCount);
-    EmissionDenominatorSummands.Reset(); EmissionDenominatorSummands.AddZeroed(HiddenStateCount);
-    for (const FConcordCrateData& Crate : Dataset.Get())
-    {
-        GetEnvironment()->SetCrate(Crate);
-        SumProduct.RunInward();
-        LogOs += log(SumProduct.GetZ());
-        SumProduct.RunOutward();
-        for (int32 LocalRandomVariableIndex = 0; LocalRandomVariableIndex < HiddenBlock.Size - 1; ++LocalRandomVariableIndex)
+        InitialNumerators.Reset(); InitialNumerators.AddZeroed(HiddenStateCount);
+        TransitionNumerators.Reset(); TransitionNumerators.AddZeroed(HiddenStateCount * HiddenStateCount);
+        for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
         {
-            const int32 HiddenIndex = HiddenBlock.Offset + LocalRandomVariableIndex;
-            auto NextHandle = GetNextHandle(HiddenIndex);
-            SetAlpha(HiddenIndex, NextHandle);
+            const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Settings.Names.Emissions[EmissionIndex].ObservedBox];
+            const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
+            EmissionNumerators[EmissionIndex].Reset(); EmissionNumerators[EmissionIndex].AddZeroed(HiddenStateCount * ObservedStateCount);
+        }
+        Denominators.Reset(); Denominators.AddZeroed(HiddenStateCount);
+        EmissionDenominatorSummands.Reset(); EmissionDenominatorSummands.AddZeroed(HiddenStateCount);
+        for (const FConcordCrateData& Crate : Dataset.Get())
+        {
+            GetEnvironment()->SetCrate(Crate);
+            SumProduct.RunInward();
+            SumProduct.RunOutward();
+            for (int32 LocalRandomVariableIndex = 0; LocalRandomVariableIndex < HiddenBlock.Size - 1; ++LocalRandomVariableIndex)
+            {
+                const int32 HiddenIndex = HiddenBlock.Offset + LocalRandomVariableIndex;
+                auto NextHandle = GetNextHandle(HiddenIndex);
+                SetAlpha(HiddenIndex, NextHandle);
+                for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
+                {
+                    for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
+                    {
+                        const auto& Emission = Settings.Names.Emissions[EmissionIndex];
+                        const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Emission.ObservedBox];
+                        const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
+                        const int32 ObservedIndex = ObservedBlock.Offset + Emission.Offset + LocalRandomVariableIndex * Emission.Stride;
+                        EmissionNumerators[EmissionIndex][AlphaValue * ObservedStateCount + GetVariation()[ObservedIndex]] += AlphaMarg[AlphaValue];
+                    }
+                    Denominators[AlphaValue] += AlphaMarg[AlphaValue];
+                    SetBeta(HiddenIndex + 1, AlphaValue, NextHandle, GetEnvironment()->GetStagingFloatParametersView(GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Transition]));
+                    for (int32 BetaValue = 0; BetaValue < HiddenStateCount; ++BetaValue)
+                        TransitionNumerators[AlphaValue * HiddenStateCount + BetaValue] += AlphaMarg[AlphaValue] * Beta[BetaValue];
+                }
+
+                if (LocalRandomVariableIndex == 0)
+                    for (int32 Value = 0; Value < HiddenStateCount; ++Value)
+                        InitialNumerators[Value] += AlphaMarg[Value];
+            }
+            // explicit final iteration for emission probs
+            const int32 HiddenIndex = HiddenBlock.Offset + HiddenBlock.Size - 1;
+            SetAlpha(HiddenIndex, nullptr);
             for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
             {
                 for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
@@ -84,67 +104,64 @@ double FConcordBaumWelchLearner::UpdateAndGetLoss()
                     const auto& Emission = Settings.Names.Emissions[EmissionIndex];
                     const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Emission.ObservedBox];
                     const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
-                    const int32 ObservedIndex = ObservedBlock.Offset + Emission.Offset + LocalRandomVariableIndex * Emission.Stride;
+                    const int32 ObservedIndex = ObservedBlock.Offset + Emission.Offset + (HiddenBlock.Size - 1) * Emission.Stride;
                     EmissionNumerators[EmissionIndex][AlphaValue * ObservedStateCount + GetVariation()[ObservedIndex]] += AlphaMarg[AlphaValue];
                 }
-                Denominators[AlphaValue] += AlphaMarg[AlphaValue];
-                SetBeta(HiddenIndex + 1, AlphaValue, NextHandle, GetEnvironment()->GetStagingFloatParametersView(GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Transition]));
-                for (int32 BetaValue = 0; BetaValue < HiddenStateCount; ++BetaValue)
-                    TransitionNumerators[AlphaValue * HiddenStateCount + BetaValue] += AlphaMarg[AlphaValue] * Beta[BetaValue];
+                EmissionDenominatorSummands[AlphaValue] += AlphaMarg[AlphaValue];
             }
-
-            if (LocalRandomVariableIndex == 0)
-                for (int32 Value = 0; Value < HiddenStateCount; ++Value)
-                    InitialNumerators[Value] += AlphaMarg[Value];
+            GetEnvironment()->UnsetCrate(Crate);
         }
-        // explicit final iteration for emission probs
-        const int32 HiddenIndex = HiddenBlock.Offset + HiddenBlock.Size - 1;
-        SetAlpha(HiddenIndex, nullptr);
+
+        const auto& InitialBlock = GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Initial];
         for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
         {
-            for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
-            {
-                const auto& Emission = Settings.Names.Emissions[EmissionIndex];
-                const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Emission.ObservedBox];
-                const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
-                const int32 ObservedIndex = ObservedBlock.Offset + Emission.Offset + (HiddenBlock.Size - 1) * Emission.Stride;
-                EmissionNumerators[EmissionIndex][AlphaValue * ObservedStateCount + GetVariation()[ObservedIndex]] += AlphaMarg[AlphaValue];
-            }
-            EmissionDenominatorSummands[AlphaValue] += AlphaMarg[AlphaValue];
+            float& Current = GetEnvironment()->GetMutableStagingFloatParameters()[InitialBlock.Offset + AlphaValue];
+            const float Target = ProbToScore(InitialNumerators[AlphaValue] / Dataset->Num());
+            Current = FMath::Lerp(Current, Target, Settings.LearningRate);
         }
+
+        const auto& TransitionBlock = GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Transition];
+        for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
+            for (int32 BetaValue = 0; BetaValue < HiddenStateCount; ++BetaValue)
+            {
+                const int32 TransitionIndex = AlphaValue * HiddenStateCount + BetaValue;
+                float& Current = GetEnvironment()->GetMutableStagingFloatParameters()[TransitionBlock.Offset + TransitionIndex];
+                const float Target = ProbToScore(TransitionNumerators[TransitionIndex] / Denominators[AlphaValue]);
+                Current = FMath::Lerp(Current, Target, Settings.LearningRate);
+            }
+
+        for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
+            Denominators[AlphaValue] += EmissionDenominatorSummands[AlphaValue];
+
+        for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
+        {
+            const auto& Emission = Settings.Names.Emissions[EmissionIndex];
+            const auto& EmissionBlock = GetFactorGraph()->GetParameterBlocks<float>()[Emission.Emission];
+            const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Emission.ObservedBox];
+            const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
+            for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
+                for (int32 ObservedValue = 0; ObservedValue < ObservedStateCount; ++ObservedValue)
+                {
+                    const int32 EmissionParameterIndex = AlphaValue * ObservedStateCount + ObservedValue;
+                    const double Prob = EmissionNumerators[EmissionIndex][EmissionParameterIndex] / Denominators[AlphaValue];
+                    float& Current = GetEnvironment()->GetMutableStagingFloatParameters()[EmissionBlock.Offset + EmissionParameterIndex];
+                    const float Target = ProbToScore(Prob);
+                    Current = FMath::Lerp(Current, Target, Settings.LearningRate);
+                }
+        }
+    }
+
+    // Compute loss
+    SumProduct.RunInward();
+    const double LogZ = log(SumProduct.GetZ());
+    double LogOs = 0.0;
+    for (const FConcordCrateData& Crate : Dataset.Get())
+    {
+        GetEnvironment()->SetCrate(Crate);
+        SumProduct.RunInward();
+        LogOs += log(SumProduct.GetZ());
         GetEnvironment()->UnsetCrate(Crate);
     }
-
-    const auto& InitialBlock = GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Initial];
-    for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
-        GetEnvironment()->GetMutableStagingFloatParameters()[InitialBlock.Offset + AlphaValue] = ProbToScore(InitialNumerators[AlphaValue] / Dataset->Num());
-
-    const auto& TransitionBlock = GetFactorGraph()->GetParameterBlocks<float>()[Settings.Names.Transition];
-    for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
-        for (int32 BetaValue = 0; BetaValue < HiddenStateCount; ++BetaValue)
-        {
-            const int32 TransitionIndex = AlphaValue * HiddenStateCount + BetaValue;
-            GetEnvironment()->GetMutableStagingFloatParameters()[TransitionBlock.Offset + TransitionIndex] = ProbToScore(TransitionNumerators[TransitionIndex] / Denominators[AlphaValue]);
-        }
-
-    for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
-        Denominators[AlphaValue] += EmissionDenominatorSummands[AlphaValue];
-
-    for (int32 EmissionIndex = 0; EmissionIndex < Settings.Names.Emissions.Num(); ++EmissionIndex)
-    {
-        const auto& Emission = Settings.Names.Emissions[EmissionIndex];
-        const auto& EmissionBlock = GetFactorGraph()->GetParameterBlocks<float>()[Emission.Emission];
-        const auto& ObservedBlock = GetFactorGraph()->GetVariationBlocks()[Emission.ObservedBox];
-        const int32 ObservedStateCount = GetFactorGraph()->GetStateCount(ObservedBlock.Offset);
-        for (int32 AlphaValue = 0; AlphaValue < HiddenStateCount; ++AlphaValue)
-            for (int32 ObservedValue = 0; ObservedValue < ObservedStateCount; ++ObservedValue)
-            {
-                const int32 EmissionParameterIndex = AlphaValue * ObservedStateCount + ObservedValue;
-                const double Prob = EmissionNumerators[EmissionIndex][EmissionParameterIndex] / Denominators[AlphaValue];
-                GetEnvironment()->GetMutableStagingFloatParameters()[EmissionBlock.Offset + EmissionParameterIndex] = ProbToScore(Prob);
-            }
-    }
-
     return -(LogOs / Dataset->Num() - LogZ);
 }
 
@@ -198,7 +215,7 @@ void FConcordBaumWelchLearner::SetBeta(int32 FlatRandomVariableIndex, int32 Alph
     for (double& Prob : Beta) Prob /= Sum;
 }
 
-float FConcordBaumWelchLearner::ProbToScore(double Prob)
+float FConcordBaumWelchLearner::ProbToScore(double Prob) const
 {
-    return 5.0f + log(FMath::Max(1e-8, Prob));
+    return Settings.StabilityBias + log(FMath::Max(1e-8, Prob));
 }
