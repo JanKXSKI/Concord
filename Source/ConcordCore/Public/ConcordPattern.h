@@ -54,8 +54,13 @@ struct CONCORDCORE_API FConcordPatternData
 {
     GENERATED_BODY()
 
+    FConcordPatternData() : bChangePatternOnBeat(false) {}
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Concord Pattern")
     TMap<FString, FConcordTrack> Tracks;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Concord Pattern")
+    bool bChangePatternOnBeat;
 };
 
 UCLASS(Abstract, BlueprintType)
@@ -125,6 +130,7 @@ public:
     Audio::IProxyDataPtr Clone() const override { return MakeUnique<FConcordPatternProxy>(*this); }
 
     const TMap<FString, FConcordTrack>& GetTracks() const { return DataPtr->Tracks; }
+    bool ShouldChangePatternOnBeat() const { return DataPtr->bChangePatternOnBeat; }
     FGuid Guid;
 private:
     TSharedPtr<FConcordPatternData> DataPtr;

@@ -23,6 +23,9 @@ struct FConcordFactorGraphBlock
 {
     GENERATED_BODY()
 
+    FConcordFactorGraphBlock() : Offset(0), Size(0), bLocal(false) {}
+    FConcordFactorGraphBlock(int32 InOffset , int32 InSize, bool bInLocal = false) : Offset(InOffset), Size(InSize), bLocal(bInLocal) {}
+
     UPROPERTY()
     int32 Offset;
 

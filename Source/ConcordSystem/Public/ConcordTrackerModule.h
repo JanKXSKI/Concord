@@ -30,6 +30,9 @@ struct FConcordTrackerModuleInstrumentSlot
 {
     GENERATED_BODY()
 
+    FConcordTrackerModuleInstrumentSlot() : Index(0) {}
+    FConcordTrackerModuleInstrumentSlot(int32 InIndex, FString InName) : Index(InIndex), Name(InName) {}
+
     UPROPERTY(VisibleAnywhere, Category = "Concord Tracker Module")
     int32 Index;
 

@@ -110,6 +110,7 @@ namespace Metasound
         void UpdatePattern();
         void UpdateBPM();
         void UpdateLinesPerBeat();
+        int32 GetXmpRow() const;
         void CheckNumberOfLines();
         void ClearPattern();
         void SetPlayerStartPosition();

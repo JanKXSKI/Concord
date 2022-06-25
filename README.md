@@ -223,5 +223,6 @@ Everything is experimental, nativization especially so. The code generated when 
 When changing the interface of a Concord model by adding/removing/renaming parameters or outputs, all other non-native models that use the edited model as a composite or instance are updated and saved. The edited graph is automatically saved as well.
 
 ## Concord Player: libxmp
+* Each instrument needs to have a corresponding channel. Channels need to have the same order as instruments.
 * Stereo samples are not supported. An instrument whose name starts with "L_" or "R_" can get its pattern data from a track of the same name without a prefix, so you can emulate stereo samples by hard panning 2 instruments. Note that the stereo instrument pair needs to occupy neighboring instrument slots, with the left one coming first.
 * Note-offs do not let the volume envelope run out.

@@ -97,7 +97,7 @@ FDataReferenceCollection FConcordTrackerModulePlayerOperator::GetOutputs() const
 void FConcordTrackerModulePlayerOperator::Execute()
 {
     if (!ReinitXmp()) return;
-    if (!bCleared && PatternAsset->GetProxy()->Guid != CurrentPatternGuid)
+    if (!bCleared && PatternAsset->GetProxy()->Guid != CurrentPatternGuid && !PatternAsset->GetProxy()->ShouldChangePatternOnBeat())
         UpdatePattern();
     if (CurrentBPM != *BPM) UpdateBPM();
     if (CurrentLinesPerBeat != *LinesPerBeat) UpdateLinesPerBeat();
@@ -123,7 +123,11 @@ void FConcordTrackerModulePlayerOperator::Execute()
         return;
     }
 
+    const int32 PrevRow = GetXmpRow();
     PlayModule(0, Settings.GetNumFramesPerBlock());
+    const int32 CurrRow = GetXmpRow();
+    if (PrevRow != CurrRow && (CurrRow + 1) % CurrentLinesPerBeat == 0 && !bCleared && PatternAsset->GetProxy()->Guid != CurrentPatternGuid)
+        UpdatePattern();
 }
 
 bool FConcordTrackerModulePlayerOperator::ReinitXmp()
@@ -302,6 +306,13 @@ void FConcordTrackerModulePlayerOperator::UpdateLinesPerBeat()
     }
 }
 
+int32 FConcordTrackerModulePlayerOperator::GetXmpRow() const
+{
+    xmp_frame_info frame_info;
+    xmp_get_frame_info(context, &frame_info);
+    return frame_info.row;
+}
+
 void FConcordTrackerModulePlayerOperator::CheckNumberOfLines()
 {
     if (*NumberOfLines != CurrentNumberOfLines && *NumberOfLines > InitialNumberOfLines)
@@ -310,9 +321,7 @@ void FConcordTrackerModulePlayerOperator::CheckNumberOfLines()
         return;
     }
     CurrentNumberOfLines = *NumberOfLines;
-    xmp_frame_info frame_info;
-    xmp_get_frame_info(context, &frame_info);
-    if (frame_info.row >= CurrentNumberOfLines)
+    if (GetXmpRow() >= CurrentNumberOfLines)
     {
         if (*bLoop)
         {

@@ -108,6 +108,9 @@ struct FConcordNativeModelOutputInfo
 {
     GENERATED_BODY()
 
+    FConcordNativeModelOutputInfo() : Num(0), Type(EConcordValueType::Int) {}
+    FConcordNativeModelOutputInfo(int32 InNum, EConcordValueType InType) : Num(InNum), Type(InType) {}
+
     UPROPERTY()
     int32 Num;
 
