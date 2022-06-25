@@ -5,6 +5,10 @@ Concord is an Unreal Engine plugin for sampling symbolic music from graphical pr
 
 Check out the Concord tutorial playlist on YouTube: https://youtube.com/playlist?list=PLKchFlXMNqi5Dwlnq4IugVnf0bt25QG_c
 
+## User Experience Study
+
+I am in the process of writing a thesis on adaptive generation of musical variations. Please consider filling out a survey on your experience with Concord if you do give it a go: https://www.soscisurvey.de/concord
+
 ## Core Functionality
 
 At its core, Concord is about creating, editing and sampling from factor graphs over discrete random variables. The resulting distributions can be affected by dynamic parameters and observations. After running a sampler to find a likely configuration for the values of the discrete random variables, musical pattern data can be computed from these values and fed to a sound generator such as Unreal Engine's MetaSounds.
