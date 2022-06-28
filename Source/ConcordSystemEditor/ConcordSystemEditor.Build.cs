@@ -11,7 +11,7 @@ public class ConcordSystemEditor : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PropertyEditor", "ConcordSystem", "Concord", "ConcordCore" });
 
-        PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "MetasoundGraphCore", "JsonUtilities", "Json", "Slate", "SlateCore", "AudioExtensions", "MainFrame", "PropertyEditor", "ApplicationCore" });
+        PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "MetasoundGraphCore", "JsonUtilities", "Json", "Slate", "SlateCore", "AudioExtensions", "MainFrame", "PropertyEditor", "ApplicationCore", "DesktopPlatform" });
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../ThirdParty"));
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "../ThirdParty/midifile/include"));
