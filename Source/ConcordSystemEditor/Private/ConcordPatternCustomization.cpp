@@ -109,11 +109,22 @@ void UConcordPatternUtilities::ExportMidi(UConcordPattern* Pattern, const FStrin
 				if (Column.NoteValues[NoteIndex] == 0) continue;
 				const float Delay = (Column.DelayValues.Num() > NoteIndex) ? FMath::Clamp(Column.DelayValues[NoteIndex], 0, 6) / 6.0f : 0.0f;
 				const int32 Tick = (NoteIndex + Delay) / Pattern->PreviewLinesPerBeat * File.getTPQ();
-				if (LastNote != -1) File.addNoteOff(TrackIndex, Tick, 0, LastNote);
-			    if (Column.NoteValues[NoteIndex] < 0) continue;
-				const int32 Velocity = (Column.VolumeValues.Num() > NoteIndex) ? FMath::Clamp(Column.VolumeValues[NoteIndex] * 2, 0, 127) : 127;
-				File.addNoteOn(TrackIndex, Tick, 0, Column.NoteValues[NoteIndex], Velocity);
-				LastNote = Column.NoteValues[NoteIndex];
+				if (LastNote != -1)
+				{
+					File.addNoteOff(TrackIndex, Tick, 0, LastNote);
+					LastNote = -1;
+				}
+				if (Column.NoteValues[NoteIndex] > 0)
+				{
+					const int32 Velocity = (Column.VolumeValues.Num() > NoteIndex) ? FMath::Clamp(Column.VolumeValues[NoteIndex] * 2, 0, 127) : 127;
+					File.addNoteOn(TrackIndex, Tick, 0, Column.NoteValues[NoteIndex], Velocity);
+					LastNote = Column.NoteValues[NoteIndex];
+				}
+			}
+			if (LastNote != -1)
+			{
+				const int32 Tick = Column.NoteValues.Num() / Pattern->PreviewLinesPerBeat * File.getTPQ();
+				File.addNoteOff(TrackIndex, Tick, 0, LastNote);
 			}
 		}
 		++TrackIndex;
