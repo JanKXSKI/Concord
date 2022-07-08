@@ -86,7 +86,7 @@ UConcordTransformer* FConcordModelGraphSync::GetOwningTransformer(const UEdGraph
         const int32 FlatBoxLocalIndex = BoxNode->GetPinIndexRV(Pin);
         const FName TransformerElementName { "TransformerElement", FlatBoxLocalIndex };
         UConcordTransformerElement* TransformerElement = FindObjectFast<UConcordTransformerElement>(BoxNode->GetBox(), TransformerElementName, true);
-        if (!TransformerElement) TransformerElement = NewObject<UConcordTransformerElement>(BoxNode->GetBox(), TransformerElementName);
+        if (!TransformerElement) TransformerElement = NewObject<UConcordTransformerElement>(BoxNode->GetBox(), TransformerElementName, RF_TextExportTransient);
         TransformerElement->MultiIndex = ConcordShape::UnflattenIndex(FlatBoxLocalIndex, BoxNode->GetDefaultShape());
         TransformerElement->ConnectedTransformers = { BoxNode->GetBox() };
         return TransformerElement;
