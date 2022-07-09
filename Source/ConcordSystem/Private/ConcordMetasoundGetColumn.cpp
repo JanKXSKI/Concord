@@ -87,12 +87,12 @@ void FConcordGetColumnOperator::Execute()
     int32 ColumnIndex = Path.ColumnIndex;
     if (*ColumnIndexOverride >= 0) ColumnIndex = *ColumnIndexOverride;
     if (ColumnIndex >= FoundTrack->Columns.Num()) { UE_LOG(LogMetaSound, Error, TEXT("Concord Get Column: Column index %i out of range in %s."), ColumnIndex, **ColumnPath); return; }
-    switch (Path.ColumnType)
+    switch (Path.ColumnValuesType)
     {
-    case FConcordColumnPath::Note: SetColumn(FoundTrack->Columns[ColumnIndex].NoteValues); break;
-    case FConcordColumnPath::Instrument: SetColumn(FoundTrack->Columns[ColumnIndex].InstrumentValues); break;
-    case FConcordColumnPath::Volume: SetColumn(FoundTrack->Columns[ColumnIndex].VolumeValues); break;
-    case FConcordColumnPath::Delay: SetColumn(FoundTrack->Columns[ColumnIndex].DelayValues); break;
+    case EConcordColumnValuesType::Note: SetColumn(FoundTrack->Columns[ColumnIndex].NoteValues); break;
+    case EConcordColumnValuesType::Instrument: SetColumn(FoundTrack->Columns[ColumnIndex].InstrumentValues); break;
+    case EConcordColumnValuesType::Volume: SetColumn(FoundTrack->Columns[ColumnIndex].VolumeValues); break;
+    case EConcordColumnValuesType::Delay: SetColumn(FoundTrack->Columns[ColumnIndex].DelayValues); break;
     }
 }
 

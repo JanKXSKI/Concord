@@ -116,12 +116,12 @@ void FConcordSampler::SetColumnsFromOutputs(FConcordPatternData& OutPatternData)
         FConcordColumn& Column = Track.Columns[ColumnPath.ColumnIndex];
         FConcordTrack* PreviousTrack = PreviousTracks.FindByHash(GetTypeHash(ColumnPath.TrackName), ColumnPath.TrackName);
         FConcordColumn* PreviousColumn = (PreviousTrack && ColumnPath.ColumnIndex < PreviousTrack->Columns.Num()) ? &PreviousTrack->Columns[ColumnPath.ColumnIndex] : nullptr;
-        switch (ColumnPath.ColumnType)
+        switch (ColumnPath.ColumnValuesType)
         {
-        case FConcordColumnPath::Note: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.NoteValues, PreviousColumn ? &PreviousColumn->NoteValues : nullptr); break;
-        case FConcordColumnPath::Instrument: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.InstrumentValues, PreviousColumn ? &PreviousColumn->InstrumentValues : nullptr); break;
-        case FConcordColumnPath::Volume: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.VolumeValues, PreviousColumn ? &PreviousColumn->VolumeValues : nullptr); break;
-        case FConcordColumnPath::Delay: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.DelayValues, PreviousColumn ? &PreviousColumn->DelayValues : nullptr); break;
+        case EConcordColumnValuesType::Note: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.NoteValues, PreviousColumn ? &PreviousColumn->NoteValues : nullptr); break;
+        case EConcordColumnValuesType::Instrument: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.InstrumentValues, PreviousColumn ? &PreviousColumn->InstrumentValues : nullptr); break;
+        case EConcordColumnValuesType::Volume: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.VolumeValues, PreviousColumn ? &PreviousColumn->VolumeValues : nullptr); break;
+        case EConcordColumnValuesType::Delay: SetColumnFromOutput(NameOutputPair.Value.Get(), Column.DelayValues, PreviousColumn ? &PreviousColumn->DelayValues : nullptr); break;
         }
     }
 }

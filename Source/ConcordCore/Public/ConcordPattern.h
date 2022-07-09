@@ -12,11 +12,13 @@
 
 #define CONCORD_PATTERN_NOTE_VALUE_OFF (-1)
 
+enum class EConcordColumnValuesType { Note, Instrument, Volume, Delay };
+
 struct CONCORDCORE_API FConcordColumnPath
 {
     static TOptional<FConcordColumnPath> Parse(FStringView PathView);
     FStringView TrackName;
-    enum EColumnType { Note, Instrument, Volume, Delay } ColumnType;
+    EConcordColumnValuesType ColumnValuesType;
     int32 ColumnIndex;
 };
 

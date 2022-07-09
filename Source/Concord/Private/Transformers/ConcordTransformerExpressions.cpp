@@ -20,9 +20,9 @@ using namespace Concord;
 template<typename FValue>
 FConcordValue FConcordClampExpression<FValue>::ComputeValue(const FConcordExpressionContext<float>& Context) const
 {
-    const FValue X = SourceExpressions[0]->ComputeValue(Context).Get<FValue>();
-    const FValue Min = SourceExpressions[1]->ComputeValue(Context).Get<FValue>();
-    const FValue Max = SourceExpressions[2]->ComputeValue(Context).Get<FValue>();
+    const FValue X = SourceExpressions[0]->ComputeValue(Context). template Get<FValue>();
+    const FValue Min = SourceExpressions[1]->ComputeValue(Context). template Get<FValue>();
+    const FValue Max = SourceExpressions[2]->ComputeValue(Context). template Get<FValue>();
     return X < Min ? Min : (X > Max ? Max : X);
 }
 
@@ -45,8 +45,8 @@ template class FConcordClampExpression<float>;
 template<typename FValue>
 FConcordValue FConcordFlankExpression<FValue>::ComputeValue(const FConcordExpressionContext<float>& Context) const
 {
-    const FValue Previous = SourceExpressions[0]->ComputeValue(Context).Get<FValue>();
-    const FValue Current = SourceExpressions[1]->ComputeValue(Context).Get<FValue>();
+    const FValue Previous = SourceExpressions[0]->ComputeValue(Context). template Get<FValue>();
+    const FValue Current = SourceExpressions[1]->ComputeValue(Context). template Get<FValue>();
     return int32(Previous != Current);
 }
 
@@ -68,9 +68,9 @@ template class FConcordFlankExpression<float>;
 template<typename FValue>
 FConcordValue FConcordFlankDistanceExpression<FValue>::ComputeValue(const FConcordExpressionContext<float>& Context) const
 {
-    const FValue Value = SourceExpressions[0]->ComputeValue(Context).Get<FValue>();
+    const FValue Value = SourceExpressions[0]->ComputeValue(Context). template Get<FValue>();
     for (int32 Index = 1; Index < SourceExpressions.Num(); ++Index)
-        if (SourceExpressions[Index]->ComputeValue(Context).Get<FValue>() != Value)
+        if (SourceExpressions[Index]->ComputeValue(Context). template Get<FValue>() != Value)
             return Index;
     return SourceExpressions.Num();
 }

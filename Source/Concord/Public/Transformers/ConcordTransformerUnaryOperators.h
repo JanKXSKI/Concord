@@ -44,7 +44,7 @@
     \
         FConcordValue ComputeValue(const FConcordExpressionContext<float>& Context) const override\
         {\
-            return CONCORD_##Name(SourceExpressions[0]->ComputeValue(Context).Get<FValue>());\
+            return CONCORD_##Name(SourceExpressions[0]->ComputeValue(Context). template Get<FValue>());\
         }\
         CONCORD_UNARY_OPERATOR_TO_STRING(Name)\
     };\

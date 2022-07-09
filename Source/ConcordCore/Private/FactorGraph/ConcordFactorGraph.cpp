@@ -51,4 +51,4 @@ void FConcordFactorGraph<FFloatType>::CompactAndShrink()
     FloatParameterDefaultValues.Shrink();
 }
 
-template CONCORDCORE_API class FConcordFactorGraph<float>;
+template class CONCORDCORE_API FConcordFactorGraph<float>;

@@ -218,7 +218,9 @@ const FConcordNativeModelOutputInfo* UConcordNativeModel::GetOutputInfo(const FN
 
 UConcordNativeModelImplementation* UConcordNativeModel::GetImplementation() const
 {
-    if (UClass* ImplementationClass = FindObject<UClass>(ANY_PACKAGE, *ImplementationClassName))
+    const FTopLevelAssetPath ClassAssetPath(*FString::Printf(TEXT("/Script/%s"), *ImplementationClassName), *ImplementationClassName);
+    UClass* ImplementationClass = FindObject<UClass>(ClassAssetPath);
+    if (ImplementationClass)
         return Cast<UConcordNativeModelImplementation>(ImplementationClass->GetDefaultObject());
     return nullptr;
 }

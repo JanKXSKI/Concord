@@ -35,9 +35,10 @@ using FConcordHandle = FConcordFactorHandleBase<float>;
 template<typename FFactor, typename FFloatType>
 class FConcordFactorHandle : public FConcordFactorHandleBase<FFloatType>
 {
-    using FMaxSumVariableMessage = typename FConcordFactorHandleBase<FFloatType>::FMaxSumVariableMessage;
+    using Super = FConcordFactorHandleBase<FFloatType>;
+    using FMaxSumVariableMessage = typename Super::FMaxSumVariableMessage;
     template<typename FSumProductFloatType>
-    using FSumProductMessages = typename FConcordFactorHandleBase<FFloatType>::template FSumProductMessages<FSumProductFloatType>;
+    using FSumProductMessages = typename Super:: template FSumProductMessages<FSumProductFloatType>;
 public:
     FFloatType ComputeScore(const FConcordExpressionContext<FFloatType>& Context) const override final
     {
@@ -80,10 +81,10 @@ public:
 private:
     void AddMaxSumMessageImpl(const FConcordExpressionContextMutable<FFloatType>& Context, TArray<FMaxSumVariableMessage>& Messages, int32 TargetFlatRandomVariableIndex, TOptional<FFloatType>& MaxScore, int32 NeighborIndex = 0) const
     {
-        if (NeighborIndex == NeighboringFlatRandomVariableIndices.Num())
+        if (NeighborIndex == Super::NeighboringFlatRandomVariableIndices.Num())
         {        
             FFloatType Score = ComputeScore(Context);
-            for (int32 NeighboringFlatRandomVariableIndex : NeighboringFlatRandomVariableIndices)
+            for (int32 NeighboringFlatRandomVariableIndex : Super::NeighboringFlatRandomVariableIndices)
                 if (NeighboringFlatRandomVariableIndex != TargetFlatRandomVariableIndex)
                     Score += Messages[NeighboringFlatRandomVariableIndex][Context.Variation[NeighboringFlatRandomVariableIndex]].Score;
             if (!MaxScore || MaxScore.GetValue() < Score)
@@ -91,14 +92,14 @@ private:
                 MaxScore = Score;
                 TArray<int32>& OutwardValues = Messages[TargetFlatRandomVariableIndex][Context.Variation[TargetFlatRandomVariableIndex]].NeighboringFactorOutwardValues[this];
                 OutwardValues.Reset();
-                for (int32 NeighboringFlatRandomVariableIndex : NeighboringFlatRandomVariableIndices)
+                for (int32 NeighboringFlatRandomVariableIndex : Super::NeighboringFlatRandomVariableIndices)
                     if (NeighboringFlatRandomVariableIndex != TargetFlatRandomVariableIndex)
                         OutwardValues.Add(Context.Variation[NeighboringFlatRandomVariableIndex]);
             }
             return;
         }
 
-        const int32 FlatRandomVariableIndex = NeighboringFlatRandomVariableIndices[NeighborIndex];
+        const int32 FlatRandomVariableIndex = Super::NeighboringFlatRandomVariableIndices[NeighborIndex];
         if (FlatRandomVariableIndex == TargetFlatRandomVariableIndex || Context.ObservationMask[FlatRandomVariableIndex])
         {
             AddMaxSumMessageImpl(Context, Messages, TargetFlatRandomVariableIndex, MaxScore, NeighborIndex + 1);
@@ -125,11 +126,11 @@ private:
     template<typename FSumProductFloatType>
     void SendSumProductMessageImpl(const FConcordExpressionContextMutable<FFloatType>& Context, FSumProductMessages<FSumProductFloatType>& Messages, int32 TargetFlatRandomVariableIndex, int32 FactorMessageIndex, int32 FactorMessageStride, int32 NeighborIndex = 0) const
     {
-        if (NeighborIndex == NeighboringFlatRandomVariableIndices.Num())
+        if (NeighborIndex == Super::NeighboringFlatRandomVariableIndices.Num())
         {        
             FSumProductFloatType& FactorMessageValue = Messages.FactorMessages[this][FactorMessageIndex];
             FactorMessageValue = exp(FSumProductFloatType(ComputeScore(Context)));
-            for (int32 NeighboringFlatRandomVariableIndex : NeighboringFlatRandomVariableIndices)
+            for (int32 NeighboringFlatRandomVariableIndex : Super::NeighboringFlatRandomVariableIndices)
                 if (NeighboringFlatRandomVariableIndex != TargetFlatRandomVariableIndex)
                     for (const auto& HandleValuesPair : Messages.VariableMessageFactors[NeighboringFlatRandomVariableIndex])
                         if (HandleValuesPair.Key != this)
@@ -138,7 +139,7 @@ private:
             return;
         }
 
-        const int32 FlatRandomVariableIndex = NeighboringFlatRandomVariableIndices[NeighborIndex];
+        const int32 FlatRandomVariableIndex = Super::NeighboringFlatRandomVariableIndices[NeighborIndex];
         const int32 StateCount = Messages.VariableMessageFactors[FlatRandomVariableIndex][this].Num();
         FactorMessageStride /= StateCount;
         if (FlatRandomVariableIndex == TargetFlatRandomVariableIndex || Context.ObservationMask[FlatRandomVariableIndex])

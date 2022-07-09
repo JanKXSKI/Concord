@@ -20,19 +20,19 @@ TOptional<FConcordColumnPath> FConcordColumnPath::Parse(FStringView PathView)
         {
         case TEXT('n'):
         case TEXT('N'):
-            Path.ColumnType = Note;
+            Path.ColumnValuesType = EConcordColumnValuesType::Note;
             break;
         case TEXT('i'):
         case TEXT('I'):
-            Path.ColumnType = Instrument;
+            Path.ColumnValuesType = EConcordColumnValuesType::Instrument;
             break;
         case TEXT('v'):
         case TEXT('V'):
-            Path.ColumnType = Volume;
+            Path.ColumnValuesType = EConcordColumnValuesType::Volume;
             break;
         case TEXT('d'):
         case TEXT('D'):
-            Path.ColumnType = Delay;
+            Path.ColumnValuesType = EConcordColumnValuesType::Delay;
             break;
         default: return {};
         }
