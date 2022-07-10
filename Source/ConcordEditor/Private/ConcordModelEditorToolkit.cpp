@@ -94,7 +94,7 @@ void FConcordModelEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManage
     }))
     .SetDisplayName(INVTEXT("Model Editor"))
     .SetGroup(WorkspaceMenuCategoryRef)
-    .SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "GraphEditor.EventGraph_24x"));
+    .SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "GraphEditor.EventGraph_24x"));
 
     InTabManager->RegisterTabSpawner("ConcordModelEditor_Details", FOnSpawnTab::CreateLambda([&](const FSpawnTabArgs& Args)
     {
@@ -104,7 +104,7 @@ void FConcordModelEditorToolkit::RegisterTabSpawners(const TSharedRef<FTabManage
     }))
     .SetDisplayName(INVTEXT("Details"))
     .SetGroup(WorkspaceMenuCategoryRef)
-    .SetIcon(FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.Tabs.Details"));
+    .SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Details"));
 }
 
 void FConcordModelEditorToolkit::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)

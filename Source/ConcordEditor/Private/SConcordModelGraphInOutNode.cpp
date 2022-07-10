@@ -29,7 +29,7 @@ TSharedRef<SWidget> SConcordModelGraphInOutNode::CreateNodeContentArea()
 
     TSharedPtr<SNodeTitle> NodeTitle = SNew(SNodeTitle, GraphNode);
     return SNew(SBorder)
-    .BorderImage(FEditorStyle::GetBrush("NoBorder"))
+    .BorderImage(FAppStyle::GetBrush("NoBorder"))
     .HAlign(HAlign_Fill)
     .VAlign(VAlign_Fill)
     .Padding(FMargin(12.0f, 3.0f))

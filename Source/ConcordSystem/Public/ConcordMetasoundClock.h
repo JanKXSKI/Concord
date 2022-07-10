@@ -15,7 +15,7 @@ namespace Metasound
     {
         class FOperatorFactory : public IOperatorFactory
         {
-            virtual TUniquePtr<IOperator> CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors) override;
+            virtual TUniquePtr<IOperator> CreateOperator(const FBuildOperatorParams& InParams, FBuildResults& OutResults) override;
         };
     public:
         static const FVertexInterface& DeclareVertexInterface();

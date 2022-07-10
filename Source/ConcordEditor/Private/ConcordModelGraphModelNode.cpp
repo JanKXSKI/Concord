@@ -6,7 +6,7 @@
 #include "ConcordParameter.h"
 #include "ConcordOutput.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "AssetData.h"
+#include "AssetRegistry/AssetData.h"
 #include "FileHelpers.h"
 
 FText UConcordModelGraphModelNode::GetNodeTitle(ENodeTitleType::Type TitleType) const
@@ -128,7 +128,7 @@ void UConcordModelGraphComposite::GetMenuEntries(FGraphContextMenuBuilder& Conte
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
     TArray<FAssetData> AssetDatas;
-    AssetRegistryModule.Get().GetAssetsByClass(UConcordModel::StaticClass()->GetFName(), AssetDatas);
+    AssetRegistryModule.Get().GetAssetsByClass(UConcordModel::StaticClass()->GetClassPathName(), AssetDatas);
     for (const FAssetData& AssetData : AssetDatas)
         if (AssetData.ObjectPath != FName(Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName()))
             ContextMenuBuilder.AddAction(MakeShared<FConcordModelGraphAddNodeAction_NewComposite>(AssetData));
@@ -175,7 +175,7 @@ void UConcordModelGraphInstance::GetMenuEntries(FGraphContextMenuBuilder& Contex
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
     TArray<FAssetData> AssetDatas;
-    AssetRegistryModule.Get().GetAssetsByClass(UConcordModelBase::StaticClass()->GetFName(), AssetDatas, true);
+    AssetRegistryModule.Get().GetAssetsByClass(UConcordModelBase::StaticClass()->GetClassPathName(), AssetDatas, true);
     for (const FAssetData& AssetData : AssetDatas)
     {
         if (AssetData.ObjectPath == FName(Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName())) continue;

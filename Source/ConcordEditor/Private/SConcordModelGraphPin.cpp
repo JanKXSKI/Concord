@@ -81,7 +81,7 @@ TSharedRef<SWidget>	SConcordModelGraphPin::GetDefaultValueWidget()
     .MaxDesiredWidth(400)
     [
         SNew(SNumericEntryBox<double>)
-        .EditableTextBoxStyle(FEditorStyle::Get(), "Graph.EditableTextBox")
+        .EditableTextBoxStyle(FAppStyle::Get(), "Graph.EditableTextBox")
         .BorderForegroundColor(FSlateColor::UseForeground())
         .Visibility(this, &SConcordModelGraphPin::GetDefaultValueVisibility)
         .IsEnabled(this, &SConcordModelGraphPin::GetDefaultValueIsEditable)
@@ -95,7 +95,7 @@ TSharedRef<SWidget> SConcordModelGraphPin::GetLabelWidget(const FName& InPinLabe
 {
     return SNew(STextBlock)
     .Text(GetPinLabel())
-    .TextStyle(FEditorStyle::Get(), InPinLabelStyle)
+    .TextStyle(FAppStyle::Get(), InPinLabelStyle)
     .Visibility(this, &SConcordModelGraphPin::GetPinLabelVisibility)
     .ColorAndOpacity(this, &SConcordModelGraphPin::GetPinTextColor)
     .Justification(ETextJustify::Center);

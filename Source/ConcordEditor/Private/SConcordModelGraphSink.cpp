@@ -21,7 +21,7 @@ void SConcordModelGraphSink::Construct(const FArguments& InArgs, UEdGraphNode* I
 TSharedRef<SWidget> SConcordModelGraphSink::CreateNodeContentArea()
 {
     return SNew(SBorder)
-    .BorderImage(FEditorStyle::GetBrush("NoBorder"))
+    .BorderImage(FAppStyle::GetBrush("NoBorder"))
     .HAlign(HAlign_Fill)
     .VAlign(VAlign_Fill)
     .Padding(FMargin(12.0f, 3.0f))

@@ -165,11 +165,11 @@ int32 SConcordModelGraphBarChart::OnPaint(const FPaintArgs& Args, const FGeometr
         const float Prob = Distribution[ProbIndex];
         FVector2D BarSize { Width - 2 * BarMarginX, Prob * MaxHeight };
         float BarTransformX = ProbIndex * Width + BarMarginX;
-        FSlateLayoutTransform BarTransform({ BarTransformX, (1 - Prob) * MaxHeight });
+        FSlateLayoutTransform BarTransform(FVector2f(BarTransformX, (1 - Prob) * MaxHeight));
         FPaintGeometry PaintGeometry = AllottedGeometry.ToPaintGeometry(BarSize, BarTransform);
         FSlateDrawElement::MakeBox(OutDrawElements, LayerId, PaintGeometry, &Brush, ESlateDrawEffect::None, ProbIndex % 2 == 0 ? Color : 0.8f * Color);
 
-        FPaintGeometry TextGeometry = AllottedGeometry.ToPaintGeometry(FSlateLayoutTransform({ BarTransformX, MaxHeight - (ProbIndex < 100 ? 13.0f : 12.0f) }));
+        FPaintGeometry TextGeometry = AllottedGeometry.ToPaintGeometry(FSlateLayoutTransform(FVector2f(BarTransformX, MaxHeight - (ProbIndex < 100 ? 13.0f : 12.0f))));
         FSlateFontInfo FontInfo = { FCoreStyle::GetDefaultFont(), ProbIndex < 100 ? 8 : 7, NAME_None, FFontOutlineSettings(1) };
         FSlateDrawElement::MakeText(OutDrawElements, LayerId + 1, TextGeometry, FString::Printf(TEXT("%d"), ProbIndex), FontInfo);
     }
