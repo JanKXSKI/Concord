@@ -27,6 +27,9 @@ public:
     UPROPERTY(EditAnywhere, meta = (ClampMin = -5, ClampMax = 5))
     float DistanceScale;
 
+    UPROPERTY(EditAnywhere)
+    bool bHideAdvancedPins;
+
     static FVector2D GetCenter(const UEdGraph* Graph);
 private:
     void ExportInteral(const UConcordModelGraph* Graph);
@@ -43,7 +46,11 @@ private:
     void WriteInputOutputPinPairs(const UEdGraphNode* Node, int32 InputPinIndex = 0, int32 OutputPinIndex = 0);
     void WritePin(const UEdGraphPin* Pin);
     void WritePinPlaceholder(EEdGraphPinDirection Direction);
+    void WritePinLabel(const UEdGraphPin* Pin);
     void WriteDetails(const UEdGraphNode* Node);
+    void WriteDetail(const FString& Name, const FString& Value);
+    
+    bool ShouldWritePin(const UEdGraphPin* Pin) const;
 
     FString Buffer;
     FVector2D Center;

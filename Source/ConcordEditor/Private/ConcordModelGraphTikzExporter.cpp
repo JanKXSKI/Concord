@@ -77,6 +77,7 @@ UConcordModelGraphTikzExporter::UConcordModelGraphTikzExporter()
     : Directory({ FPlatformProcess::UserDir() })
     , FileName("Graph.tikz")
     , DistanceScale(0.0f)
+    , bHideAdvancedPins(false)
 {}
 
 void UConcordModelGraphTikzExporter::ExportInteral(const UConcordModelGraph* Graph)
@@ -110,15 +111,17 @@ void UConcordModelGraphTikzExporter::WriteHeader()
     \tikzstyle{pinlabel} = [font = \footnotesize, minimum width = 0.5cm]
     \tikzstyle{inlabel} = [pinlabel, right = 0.1cm, anchor = mid west]
     \tikzstyle{outlabel} = [pinlabel, left = 0.1cm, anchor = mid east]
-    \tikzstyle{nodetitle} = [minimum height = 0.7cm]
+    \tikzstyle{nodetitle} = [font = \small, minimum height = 0.6cm]
     \tikzstyle{nodedetails} = [font = \footnotesize, text = gray]
+    \tikzstyle{nodebordertransformer} = [draw, rounded corners]
+    \tikzstyle{nodeborder} = [nodebordertransformer, double, double distance = 0.08cm, thick]
 )_");
 }
 
 void UConcordModelGraphTikzExporter::WriteNode(const UEdGraphNode* Node)
 {
-    double X = (Node->NodePosX - Center.X) * 0.02 * FMath::Pow(2.0, DistanceScale);
-    double Y = (Center.Y - Node->NodePosY) * 0.02 * FMath::Pow(2.0, DistanceScale);
+    double X = (Node->NodePosX - Center.X) * 0.0175 * FMath::Pow(2.0, DistanceScale);
+    double Y = (Center.Y - Node->NodePosY) * 0.0175 * FMath::Pow(2.0, DistanceScale);
     Buffer += TEXT("    \\matrix(");
     WriteID(Node, TEXT("matrix"));
     Buffer += TEXT(") at ");
@@ -135,19 +138,22 @@ void UConcordModelGraphTikzExporter::WriteNode(const UEdGraphNode* Node)
     WriteTitle(Node);
     Buffer += TEXT("};\n");
 
-    Buffer += TEXT("    \\matrix[below = 0cm of ");
-    WriteID(Node, TEXT("matrix"));
-    Buffer += TEXT(".south](");
-    WriteID(Node, TEXT("details"));
-    Buffer += TEXT(")\n    {\n");
-    WriteDetails(Node);
-    Buffer += TEXT("    };\n");
-
-    Buffer += TEXT("    \\node[draw, rounded corners, fit = (");
+    Buffer += TEXT("    \\node[");
+    if (Node->IsA<UConcordModelGraphTransformer>()) Buffer += TEXT("nodebordertransformer");
+    else Buffer += TEXT("nodeborder");
+    Buffer += TEXT(", fit = (");
     WriteID(Node, TEXT("matrix"));
     Buffer += TEXT(") (");
     WriteID(Node, TEXT("title"));
-    Buffer += TEXT(")] {};\n");
+    Buffer += TEXT(")](");
+    WriteID(Node, TEXT("border"));
+    Buffer += TEXT("){};\n");
+
+    Buffer += TEXT("    \\matrix[below = 0cm of ");
+    WriteID(Node, TEXT("border"));
+    Buffer += TEXT(".south]\n    {\n");
+    WriteDetails(Node);
+    Buffer += TEXT("    };\n");
 
     WriteDefaultValues(Node);
 }
@@ -219,7 +225,7 @@ void UConcordModelGraphTikzExporter::WritePinID(const UEdGraphPin* Pin, const TC
 
 void UConcordModelGraphTikzExporter::WriteTitle(const UEdGraphNode* Node)
 {
-    Buffer += Node->GetNodeTitle(ENodeTitleType::FullTitle).ToString();
+    Buffer += Node->GetNodeTitle(ENodeTitleType::ListView).ToString();
 }
 
 void UConcordModelGraphTikzExporter::WriteInputOutputPinPairs(const UEdGraphNode* Node, int32 InputPinIndex, int32 OutputPinIndex)
@@ -227,14 +233,21 @@ void UConcordModelGraphTikzExporter::WriteInputOutputPinPairs(const UEdGraphNode
     while (InputPinIndex < Node->Pins.Num() && Node->Pins[InputPinIndex]->Direction == EGPD_Output) ++InputPinIndex;
     while (OutputPinIndex < Node->Pins.Num() && Node->Pins[OutputPinIndex]->Direction == EGPD_Input) ++OutputPinIndex;
     if (InputPinIndex >= Node->Pins.Num() && OutputPinIndex >= Node->Pins.Num()) return;
+    if ((InputPinIndex >= Node->Pins.Num() || !ShouldWritePin(Node->Pins[InputPinIndex])) &&
+        (OutputPinIndex >= Node->Pins.Num() || !ShouldWritePin(Node->Pins[OutputPinIndex])))
+    {
+        WriteInputOutputPinPairs(Node, InputPinIndex + 1, OutputPinIndex + 1);
+        return;
+    }
+
     Buffer += TEXT("        ");
-    if (InputPinIndex < Node->Pins.Num()) WritePin(Node->Pins[InputPinIndex++]);
+    if (InputPinIndex < Node->Pins.Num() && ShouldWritePin(Node->Pins[InputPinIndex])) WritePin(Node->Pins[InputPinIndex]);
     else WritePinPlaceholder(EGPD_Input);
     Buffer += TEXT(" & ");
-    if (OutputPinIndex < Node->Pins.Num()) WritePin(Node->Pins[OutputPinIndex++]);
+    if (OutputPinIndex < Node->Pins.Num() && ShouldWritePin(Node->Pins[OutputPinIndex])) WritePin(Node->Pins[OutputPinIndex]);
     else WritePinPlaceholder(EGPD_Output);
     Buffer += TEXT(" \\\\\n");
-    WriteInputOutputPinPairs(Node, InputPinIndex, OutputPinIndex);
+    WriteInputOutputPinPairs(Node, InputPinIndex + 1, OutputPinIndex + 1);
 }
 
 void UConcordModelGraphTikzExporter::WritePin(const UEdGraphPin* Pin)
@@ -245,8 +258,7 @@ void UConcordModelGraphTikzExporter::WritePin(const UEdGraphPin* Pin)
     if (Pin->Direction == EGPD_Input) Buffer += TEXT("inlabel");
     else Buffer += TEXT("outlabel");
     Buffer += TEXT("] {");
-    if (!Pin->Direction == EGPD_Output || !Pin->GetOwningNode()->IsA<UConcordModelGraphTransformer>())
-        Buffer += Pin->GetOwningNode()->GetPinDisplayName(Pin).ToString();
+    WritePinLabel(Pin);
     Buffer += TEXT("};");
 }
 
@@ -258,9 +270,50 @@ void UConcordModelGraphTikzExporter::WritePinPlaceholder(EEdGraphPinDirection Di
     Buffer += TEXT("] {}; ");
 }
 
+void UConcordModelGraphTikzExporter::WritePinLabel(const UEdGraphPin* Pin)
+{
+    if (!Pin->Direction == EGPD_Output || !Pin->GetOwningNode()->IsA<UConcordModelGraphTransformer>())
+    {
+        if (Pin->PinType.PinCategory == "RV") Buffer += FString::Printf(TEXT("RV %d"), Pin->PinName.GetNumber());
+        else Buffer += Pin->GetOwningNode()->GetPinDisplayName(Pin).ToString();
+        if (Pin->PinName == "All") Buffer += TEXT(" RVs");
+    }
+}
+
 void UConcordModelGraphTikzExporter::WriteDetails(const UEdGraphNode* Node)
 {
-    Buffer += TEXT("        \\node [nodedetails] {Shape: ");
-    Buffer += ConcordShape::ToString(Cast<UConcordModelGraphNode>(Node)->Vertex->GetShape());
+    WriteDetail(TEXT("Shape"), ConcordShape::ToString(Cast<UConcordModelGraphNode>(Node)->Vertex->GetShape()));
+    const UConcordVertex* Vertex = Cast<UConcordModelGraphNode>(Node)->Vertex;
+    for (TFieldIterator<FProperty> It(Vertex->GetClass(), EFieldIterationFlags::None); It; ++It)
+    {
+        if (FFloatProperty* FloatProp = CastField<FFloatProperty>(*It))
+        {
+            const float Value = *FloatProp->ContainerPtrToValuePtr<float>(Vertex);
+            WriteDetail(FloatProp->GetNameCPP(), FString::Printf(TEXT("%.3f"), Value));
+        }
+        else if (FIntProperty* IntProp = CastField<FIntProperty>(*It))
+        {
+            const int32 Value = *IntProp->ContainerPtrToValuePtr<int32>(Vertex);
+            WriteDetail(IntProp->GetNameCPP(), FString::Printf(TEXT("%d"), Value));
+        }
+    }
+}
+
+void UConcordModelGraphTikzExporter::WriteDetail(const FString& Name, const FString& Value)
+{
+    Buffer += TEXT("        \\node [nodedetails] {");
+    Buffer += Name;
+    Buffer += TEXT(": ");
+    Buffer += Value;
     Buffer += TEXT("}; \\\\\n");
+}
+
+bool UConcordModelGraphTikzExporter::ShouldWritePin(const UEdGraphPin* Pin) const
+{
+    if (Pin->PinType.PinCategory == "RV" && !Cast<UConcordModelGraphBox>(Pin->GetOwningNode())->bEnableIndividualPins) return false;
+    if (!bHideAdvancedPins) return true;
+    if (Pin->PinName == "State Set") return false;
+    if (Pin->PinName == "State Set") return false;
+    if (Pin->Direction == EGPD_Input && (Pin->GetOwningNode()->IsA<UConcordModelGraphBox>() || Pin->GetOwningNode()->IsA<UConcordModelGraphParameter>())) return false;
+    return true;
 }

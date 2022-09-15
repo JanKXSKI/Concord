@@ -36,6 +36,7 @@ void UConcordModelGraphTransformer::GetMenuEntries(FGraphContextMenuBuilder& Con
 
 FText UConcordModelGraphTransformer::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
+    if (TitleType == ENodeTitleType::ListView) return Vertex->GetNodeDisplayName();
     return Vertex->GetNodeDisplayName().ToUpper();
 }
 
