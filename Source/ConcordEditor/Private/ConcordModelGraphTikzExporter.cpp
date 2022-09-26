@@ -108,11 +108,11 @@ void UConcordModelGraphTikzExporter::WriteHeader()
     Buffer += TEXT(R"_(\usetikzlibrary{fit, positioning}
 \begin{tikzpicture}[every matrix/.style={column sep = 0.2cm}]
     \tikzstyle{pin} = [above = -0.09cm, fill, circle, minimum size = 0.2cm, inner sep = 0cm]
-    \tikzstyle{pinlabel} = [font = \footnotesize, minimum width = 0.5cm]
+    \tikzstyle{pinlabel} = [font = \scriptsize, minimum width = 0.5cm]
     \tikzstyle{inlabel} = [pinlabel, right = 0.1cm, anchor = mid west]
     \tikzstyle{outlabel} = [pinlabel, left = 0.1cm, anchor = mid east]
-    \tikzstyle{nodetitle} = [font = \small, minimum height = 0.6cm]
-    \tikzstyle{nodedetails} = [font = \footnotesize, text = gray]
+    \tikzstyle{nodetitle} = [font = \footnotesize, minimum height = 0.6cm]
+    \tikzstyle{nodedetails} = [font = \scriptsize, text = gray]
     \tikzstyle{nodebordertransformer} = [draw, rounded corners]
     \tikzstyle{nodeborder} = [nodebordertransformer, double, double distance = 0.08cm, thick]
 )_");
