@@ -2,6 +2,7 @@
 
 #include "ConcordModelGraphTikzExporter.h"
 #include "ConcordModelGraph.h"
+#include "ConcordModelGraphEmission.h"
 #include "Widgets/SWindow.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Modules/ModuleManager.h"
@@ -282,6 +283,7 @@ void UConcordModelGraphTikzExporter::WritePinLabel(const UEdGraphPin* Pin)
 
 void UConcordModelGraphTikzExporter::WriteDetails(const UEdGraphNode* Node)
 {
+    if (Node->IsA<UConcordModelGraphEmission>()) return;
     WriteDetail(TEXT("Shape"), ConcordShape::ToString(Cast<UConcordModelGraphNode>(Node)->Vertex->GetShape()));
     const UConcordVertex* Vertex = Cast<UConcordModelGraphNode>(Node)->Vertex;
     for (TFieldIterator<FProperty> It(Vertex->GetClass(), EFieldIterationFlags::None); It; ++It)
