@@ -150,12 +150,14 @@ void UConcordModelGraphTikzExporter::WriteNode(const UEdGraphNode* Node)
     WriteID(Node, TEXT("border"));
     Buffer += TEXT("){};\n");
 
-    Buffer += TEXT("    \\matrix[below = 0cm of ");
-    WriteID(Node, TEXT("border"));
-    Buffer += TEXT(".south]\n    {\n");
-    WriteDetails(Node);
-    Buffer += TEXT("    };\n");
-
+    if (!Node->IsA<UConcordModelGraphEmission>())
+    {
+        Buffer += TEXT("    \\matrix[below = 0cm of ");
+        WriteID(Node, TEXT("border"));
+        Buffer += TEXT(".south]\n    {\n");
+        WriteDetails(Node);
+        Buffer += TEXT("    };\n");
+    }
     WriteDefaultValues(Node);
 }
 
@@ -283,7 +285,6 @@ void UConcordModelGraphTikzExporter::WritePinLabel(const UEdGraphPin* Pin)
 
 void UConcordModelGraphTikzExporter::WriteDetails(const UEdGraphNode* Node)
 {
-    if (Node->IsA<UConcordModelGraphEmission>()) return;
     WriteDetail(TEXT("Shape"), ConcordShape::ToString(Cast<UConcordModelGraphNode>(Node)->Vertex->GetShape()));
     const UConcordVertex* Vertex = Cast<UConcordModelGraphNode>(Node)->Vertex;
     for (TFieldIterator<FProperty> It(Vertex->GetClass(), EFieldIterationFlags::None); It; ++It)
