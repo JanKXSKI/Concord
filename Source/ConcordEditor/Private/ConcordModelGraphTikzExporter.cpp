@@ -272,7 +272,7 @@ void UConcordModelGraphTikzExporter::WritePinPlaceholder(EEdGraphPinDirection Di
 
 void UConcordModelGraphTikzExporter::WritePinLabel(const UEdGraphPin* Pin)
 {
-    if (!Pin->Direction == EGPD_Output || !Pin->GetOwningNode()->IsA<UConcordModelGraphTransformer>())
+    if (Pin->Direction == EGPD_Input || !Pin->GetOwningNode()->IsA<UConcordModelGraphTransformer>())
     {
         if (Pin->PinType.PinCategory == "RV") Buffer += FString::Printf(TEXT("RV %d"), Pin->PinName.GetNumber());
         else Buffer += Pin->GetOwningNode()->GetPinDisplayName(Pin).ToString();
