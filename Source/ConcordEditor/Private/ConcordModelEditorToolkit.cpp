@@ -32,6 +32,7 @@
 #include "ConcordCrateFactory.h"
 #include "AssetToolsModule.h"
 #include "Components/AudioComponent.h"
+#include "ConcordModelGraphTikzExporter.h"
 
 void FConcordModelEditorToolkit::Initialize(UConcordModel* InConcordModel)
 {
@@ -206,6 +207,8 @@ void FConcordModelEditorToolkit::SetupCommands()
                                FExecuteAction::CreateSP(this, &FConcordModelEditorToolkit::SampleVariation));
     ToolkitCommands->MapAction(FConcordModelEditorCommands::Get().SelectedOutputsToCrate,
                                FExecuteAction::CreateSP(this, &FConcordModelEditorToolkit::SelectedOutputsToCrate));
+    ToolkitCommands->MapAction(FConcordModelEditorCommands::Get().ExportTikz,
+                               FExecuteAction::CreateSP(this, &FConcordModelEditorToolkit::ExportTikz));
 }
 
 void FConcordModelEditorToolkit::CreateInternalWidgets()
@@ -364,6 +367,7 @@ void FConcordModelEditorToolkit::ExtendToolbar()
         ToolbarBuilder.AddToolBarButton(FConcordModelEditorCommands::Get().SampleVariation);
         ToolbarBuilder.AddWidget(SNew(SBox).VAlign(VAlign_Center)[VariationScoreText.ToSharedRef()]);
         ToolbarBuilder.AddToolBarButton(FConcordModelEditorCommands::Get().SelectedOutputsToCrate);
+        ToolbarBuilder.AddToolBarButton(FConcordModelEditorCommands::Get().ExportTikz);
         ToolbarBuilder.EndSection();
     }));
     AddToolbarExtender(ToolbarExtender);
@@ -675,4 +679,9 @@ void FConcordModelEditorToolkit::SelectedOutputsToCrate()
         }
     }
     Crate->PostEditChange();
+}
+
+void FConcordModelEditorToolkit::ExportTikz() const
+{
+    UConcordModelGraphTikzExporter::Export(ConcordModelGraph);
 }

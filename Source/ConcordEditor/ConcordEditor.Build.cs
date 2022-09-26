@@ -28,7 +28,8 @@ public class ConcordEditor : ModuleRules
             "ToolMenus",
             "ApplicationCore",
             "DesktopPlatform",
-            "ConcordSystemEditor"
+            "ConcordSystemEditor",
+            "MainFrame"
         });
 
         if (Target.bWithLiveCoding)
