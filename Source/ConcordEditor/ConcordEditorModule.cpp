@@ -67,7 +67,6 @@ private:
         Style->Set("ConcordModelEditor.SampleVariation.Small", new FSlateImageBrush(Style->RootToContentDir(TEXT("SampleVariation_40x.png")), FVector2D(20.0f, 20.0f)));
         Style->Set("ConcordModelEditor.SelectedOutputsToCrate", new FSlateImageBrush(Style->RootToContentDir(TEXT("OutputCrate_40x.png")), FVector2D(40.0f, 40.0f)));
         Style->Set("ConcordModelEditor.SelectedOutputsToCrate.Small", new FSlateImageBrush(Style->RootToContentDir(TEXT("OutputCrate_40x.png")), FVector2D(20.0f, 20.0f)));
-        Style->Set("ConcordModelEditor.ExportTikz", new FSlateImageBrush(FPaths::EngineContentDir() / TEXT("Editor/Slate/Tutorials/NextButton.png"), FVector2D(40.0f, 40.0f)));
         Style->Set("ObservedInstanceNodeBody", new FSlateBoxBrush(Style->RootToContentDir(TEXT("ObservedInstanceNodeBody_64x64.png")), FMargin(16.f/64.f, 25.f/64.f, 16.f/64.f, 16.f/64.f)));
 
         FInlineEditableTextBlockStyle InOutNodeTitleStyle = FCoreStyle::Get().GetWidgetStyle<FInlineEditableTextBlockStyle>("InlineEditableTextBlockStyle");
