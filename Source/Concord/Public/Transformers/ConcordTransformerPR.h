@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ConcordTransformer.h"
+#include <array>
 #include "ConcordTransformerPR.generated.h"
 
 struct FConcordNote
@@ -67,12 +68,13 @@ class FConcordPRExpression : public FConcordComputingExpression
 {
 public:
     using FConcordComputingExpression::FConcordComputingExpression;
+    static inline int NumAdditionalSourceExpressions = 0;
 #if WITH_EDITOR
     FString ToString() const override { return TEXT("PR ToString() not implemented."); }
 #endif
     FConcordValue ComputeValue(const FConcordExpressionContext<float>& Context) const override
     {
-        return SourceExpressions[0]->ComputeValue(Context).Float * static_cast<const FImpl*>(this)->ComputeScoreClass(Context);
+        return int32(static_cast<const FImpl*>(this)->DoesPreferenceRuleApply(Context));
     }
 protected:
     TArrayView<const FConcordSharedExpression> GetDegreeExpressions() const
@@ -80,53 +82,79 @@ protected:
         return TArrayView<const FConcordSharedExpression>(SourceExpressions.GetData() + GetDegreesOffset(), GetNumDegrees());
     }
 private:
-    int32 GetDegreesOffset() const { return 1 + FImpl::NumAdditionalSourceExpressions; }
+    int32 GetDegreesOffset() const { return FImpl::NumAdditionalSourceExpressions; }
     int32 GetNumDegrees() const { return SourceExpressions.Num() - GetDegreesOffset(); }
 };
 
 template<typename FImpl>
-class FConcordPR2GroupsExpression : public FConcordPRExpression<FConcordPR2GroupsExpression<FImpl>>
+class FConcordPR2GroupsExpression : public FConcordPRExpression<FImpl>
 {
 public:
-    using FBase = FConcordPRExpression<FConcordPR2GroupsExpression<FImpl>>;
+    using FBase = FConcordPRExpression<FImpl>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = 1;
-    int32 ComputeScoreClass(const FConcordExpressionContext<float>& Context) const
+    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+protected:
+    int32 GetBoundaryIndex(const FConcordExpressionContext<float>& Context) const
     {
-        return static_cast<const FImpl*>(this)->ComputeScoreClass(Context);
+        return FBase::SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int;
     }
+};
+
+template<typename FImpl>
+class FConcordPRAdjacentGroupsExpression : public FConcordPR2GroupsExpression<FImpl>
+{
+public:
+    using FBase = FConcordPR2GroupsExpression<FImpl>;
+    using FBase::FBase;
+    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions;
 private:
     struct FNoteVisitor : FConcordNoteVisitorBase<FNoteVisitor>
     {
         bool Visit(const FConcordNote& InNote)
         {
-            Note = InNote;
+            OutNotes[OutNoteIndex] = InNote;
             return true;
         }
-        FConcordNote Note;
+        std::array<FConcordNote, 4>& OutNotes;
+        int32 OutNoteIndex { 2 };
     };
 protected:
-    int32 GetBoundaryIndex(const FConcordExpressionContext<float>& Context) const
-    {
-        return FBase::SourceExpressions[1]->ComputeValue(Context).Int;
-    }
-
-    [[nodiscard]] bool GetNotes(const FConcordExpressionContext<float>& Context, FConcordNote OutNotes[4]) const
+    [[nodiscard]] bool GetNotes(const FConcordExpressionContext<float>& Context, std::array<FConcordNote, 4>& OutNotes) const
     {
         const TArrayView<const FConcordSharedExpression> DegreeExpressions { GetDegreeExpressions() };
         int32 BoundaryIndex = GetBoundaryIndex(Context);
         if (BoundaryIndex < 0 || BoundaryIndex >= DegreeExpressions.Num()) return false;
         if (DegreeExpressions[BoundaryIndex]->ComputeValue(Context).Int <= 0) return false;
-        FNoteVisitor NoteVisitor { DegreeExpressions, BoundaryIndex };
+        FNoteVisitor NoteVisitor { DegreeExpressions, BoundaryIndex, OutNotes, 2 };
         if (!NoteVisitor(Context, true)) return false;
-        OutNotes[2] = NoteVisitor.Note;
+        NoteVisitor.OutNoteIndex = 1;
         if (!NoteVisitor(Context, true)) return false;
-        OutNotes[1] = NoteVisitor.Note;
+        NoteVisitor.OutNoteIndex = 0;
         if (!NoteVisitor(Context, true)) return false;
-        OutNotes[0] = NoteVisitor.Note;
         NoteVisitor.Index = BoundaryIndex + OutNotes[2].Length;
+        NoteVisitor.OutNoteIndex = 3;
         if (!NoteVisitor(Context)) return false;
-        OutNotes[3] = NoteVisitor.Note;
+        return true;
+    }
+};
+
+template<typename FImpl>
+class FConcordPRAdjacentGroupsIntervalExpression : public FConcordPRAdjacentGroupsExpression<FImpl>
+{
+public:
+    using FBase = FConcordPRAdjacentGroupsExpression<FImpl>;
+    using FBase::FBase;
+    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 3;
+    bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
+    {
+        std::array<FConcordNote, 4> Notes;
+        if (!GetNotes(Context, Notes)) return false;
+        for (int32 IntervalIndex = 0; IntervalIndex < 3; ++IntervalIndex)
+        {
+            const int32 TargetInterval = SourceExpressions[FBase::NumAdditionalSourceExpressions + IntervalIndex]->ComputeValue(Context).Int;
+            const int32 FoundInterval = FImpl::GetInterval(Notes[IntervalIndex], Notes[IntervalIndex + 1]);
+            if (FoundInterval != TargetInterval) return false;
+        }
         return true;
     }
 };
@@ -136,68 +164,74 @@ class FConcordGPR1Expression : public FConcordPRExpression<FConcordGPR1Expressio
 public:
     using FBase = FConcordPRExpression<FConcordGPR1Expression>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = 0;
-
+    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+private:
     struct FNoteVisitor : FConcordNoteVisitorBase<FNoteVisitor>
     {
         bool Visit(const FConcordNote& Note)
         {
             ++NumNotes;
-            return NumNotes > 2;
+            return NumNotes >= MinNumNotes;
         }
+        int32 MinNumNotes { 2 };
         int32 NumNotes { 0 };
     };
-
-    int32 ComputeScoreClass(const FConcordExpressionContext<float>& Context) const
+public:
+    bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
-        FNoteVisitor NoteVisitor { GetDegreeExpressions() };
-        if (NoteVisitor(Context)) return 0;
-        switch (NoteVisitor.NumNotes)
-        {
-        case 0: return -4;
-        case 1: return -2;
-        default: return -1;
-        }
+        const int32 MinNumNotes = SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int;
+        FNoteVisitor NoteVisitor { GetDegreeExpressions(), 0, MinNumNotes };
+        if (NoteVisitor(Context)) return true;
+        return false;
     }
 };
 
-class FConcordGPR2aExpression : public FConcordPR2GroupsExpression<FConcordGPR2aExpression>
+class FConcordGPR2aExpression : public FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR2aExpression>
 {
 public:
-    using FBase = FConcordPR2GroupsExpression<FConcordGPR2aExpression>;
+    using FBase = FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR2aExpression>;
     using FBase::FBase;
-    int32 ComputeScoreClass(const FConcordExpressionContext<float>& Context) const
+    static int32 GetInterval(const FConcordNote& N1, const FConcordNote& N2)
     {
-        FConcordNote Notes[4];
-        if (!GetNotes(Context, Notes)) return 0;
-        int32 Intervals[]
-        {
-            Notes[1].Onset - (Notes[0].Onset + Notes[0].Length),
-            Notes[2].Onset - (Notes[1].Onset + Notes[1].Length),
-            Notes[3].Onset - (Notes[2].Onset + Notes[2].Length)
-        };
-        if (Intervals[1] <= Intervals[0] || Intervals[1] <= Intervals[2]) return 0;
-        return Intervals[1] - Intervals[0] + Intervals[1] - Intervals[2];
+        return N2.Onset - (N1.Onset + N1.Length);
     }
 };
 
-class FConcordGPR2bExpression : public FConcordPR2GroupsExpression<FConcordGPR2bExpression>
+class FConcordGPR2bExpression : public FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR2bExpression>
 {
 public:
-    using FBase = FConcordPR2GroupsExpression<FConcordGPR2bExpression>;
+    using FBase = FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR2bExpression>;
     using FBase::FBase;
-    int32 ComputeScoreClass(const FConcordExpressionContext<float>& Context) const
+    static int32 GetInterval(const FConcordNote& N1, const FConcordNote& N2)
     {
-        FConcordNote Notes[4];
-        if (!GetNotes(Context, Notes)) return 0;
-        int32 Intervals[]
-        {
-            Notes[1].Onset - Notes[0].Onset,
-            Notes[2].Onset - Notes[1].Onset,
-            Notes[3].Onset - Notes[2].Onset
-        };
-        if (Intervals[1] <= Intervals[0] || Intervals[1] <= Intervals[2]) return 0;
-        return Intervals[1] - Intervals[0] + Intervals[1] - Intervals[2];
+        return N2.Onset - N1.Onset;
+    }
+};
+
+class FConcordGPR3aExpression : public FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR3aExpression>
+{
+public:
+    using FBase = FConcordPRAdjacentGroupsIntervalExpression<FConcordGPR3aExpression>;
+    using FBase::FBase;
+    static int32 GetInterval(const FConcordNote& N1, const FConcordNote& N2)
+    {
+        return FMath::Abs(N2.Degree - N1.Degree);
+    }
+};
+
+class FConcordGPR3dExpression : public FConcordPRAdjacentGroupsExpression<FConcordGPR3dExpression>
+{
+public:
+    using FBase = FConcordPRAdjacentGroupsExpression<FConcordGPR3dExpression>;
+    using FBase::FBase;
+    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
+    {
+        std::array<FConcordNote, 4> Notes;
+        if (!GetNotes(Context, Notes)) return false;
+        if (Notes[0].Length != Notes[1].Length || Notes[2].Length != Notes[3].Length) return false;
+        const int32 TargetLengthDifference = SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int;
+        return (Notes[2].Length - Notes[1].Length) == TargetLengthDifference;
     }
 };
 
@@ -210,7 +244,6 @@ public:
     {
         TArray<FInputInfo> InputInfo;
         InputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("Degrees"), "0" });
-        InputInfo.Add({ {}, EConcordValueType::Float, INVTEXT("Scale"), "1.0" });
         AddAdditionalInputs(InputInfo);
         return InputInfo;
     }
@@ -227,6 +260,8 @@ public:
             SourceExpressions.Add(GetConnectedTransformers()[0]->GetExpression(DegreesIndex));
         return MakeExpression(MoveTemp(SourceExpressions));
     }
+protected:
+    virtual void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const {}
 private:
     FSetupResult Setup(TOptional<FString>& OutErrorMessage) override
     {
@@ -235,12 +270,10 @@ private:
         DegreesShape = ConnectedShapes[0];
         TOptional<FConcordShape> BroadcastedShape = ConcordShape::Broadcast(ConnectedShapes);
         if (!BroadcastedShape) { OutErrorMessage = TEXT("Input shapes could not be broadcasted together."); return {}; }
-        return { BroadcastedShape.GetValue(), EConcordValueType::Float };
+        return { BroadcastedShape.GetValue(), EConcordValueType::Int };
     }
 
     FConcordShape DegreesShape;
-
-    virtual void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const {}
 
     virtual FConcordSharedExpression MakeExpression(TArray<FConcordSharedExpression>&& SourceExpressions) const
     {
@@ -256,6 +289,11 @@ class CONCORD_API UConcordTransformerGPR1 : public UConcordTransformerPR
 public:
     FText GetDisplayName() const override { return INVTEXT("GPR1"); }
     FText GetTooltip() const override { return INVTEXT("Tries to apply grouping preference rule 1 to the input degrees."); }
+protected:
+    void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const override
+    {
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("MinNumNotes"), "2" });
+    }
 private:
     FConcordSharedExpression MakeExpression(TArray<FConcordSharedExpression>&& SourceExpressions) const override
     {
@@ -267,15 +305,29 @@ UCLASS(Abstract)
 class CONCORD_API UConcordTransformerPR2Groups : public UConcordTransformerPR
 {
     GENERATED_BODY()
-private:
+protected:
     void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const override
     {
-        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("Boundary Index"), "0" });
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("BoundaryIndex"), "4" });
+    }
+};
+
+UCLASS(Abstract)
+class CONCORD_API UConcordTransformerPRAdjacentGroupsInterval : public UConcordTransformerPR2Groups
+{
+    GENERATED_BODY()
+protected:
+    void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const override
+    {
+        UConcordTransformerPR2Groups::AddAdditionalInputs(InOutInputInfo);
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("TargetInterval1"), "1" });
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("TargetInterval2"), "2" });
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("TargetInterval3"), "1" });
     }
 };
 
 UCLASS()
-class CONCORD_API UConcordTransformerGPR2a : public UConcordTransformerPR2Groups
+class CONCORD_API UConcordTransformerGPR2a : public UConcordTransformerPRAdjacentGroupsInterval
 {
     GENERATED_BODY()
 public:
@@ -288,9 +340,8 @@ private:
     }
 };
 
-
 UCLASS()
-class CONCORD_API UConcordTransformerGPR2b : public UConcordTransformerPR2Groups
+class CONCORD_API UConcordTransformerGPR2b : public UConcordTransformerPRAdjacentGroupsInterval
 {
     GENERATED_BODY()
 public:
@@ -300,5 +351,39 @@ private:
     FConcordSharedExpression MakeExpression(TArray<FConcordSharedExpression>&& SourceExpressions) const override
     {
         return MakeShared<const FConcordGPR2bExpression>(MoveTemp(SourceExpressions));
+    }
+};
+
+UCLASS()
+class CONCORD_API UConcordTransformerGPR3a : public UConcordTransformerPRAdjacentGroupsInterval
+{
+    GENERATED_BODY()
+public:
+    FText GetDisplayName() const override { return INVTEXT("GPR3a"); }
+    FText GetTooltip() const override { return INVTEXT("Tries to apply grouping preference rule 3a before the boundary note."); }
+private:
+    FConcordSharedExpression MakeExpression(TArray<FConcordSharedExpression>&& SourceExpressions) const override
+    {
+        return MakeShared<const FConcordGPR3aExpression>(MoveTemp(SourceExpressions));
+    }
+};
+
+UCLASS()
+class CONCORD_API UConcordTransformerGPR3d : public UConcordTransformerPR2Groups
+{
+    GENERATED_BODY()
+public:
+    FText GetDisplayName() const override { return INVTEXT("GPR3d"); }
+    FText GetTooltip() const override { return INVTEXT("Tries to apply grouping preference rule 3d before the boundary note."); }
+protected:
+    void AddAdditionalInputs(TArray<FInputInfo>& InOutInputInfo) const override
+    {
+        UConcordTransformerPR2Groups::AddAdditionalInputs(InOutInputInfo);
+        InOutInputInfo.Add({ {}, EConcordValueType::Int, INVTEXT("TargetLengthDifference"), "1" });
+    }
+private:
+    FConcordSharedExpression MakeExpression(TArray<FConcordSharedExpression>&& SourceExpressions) const override
+    {
+        return MakeShared<const FConcordGPR3dExpression>(MoveTemp(SourceExpressions));
     }
 };
