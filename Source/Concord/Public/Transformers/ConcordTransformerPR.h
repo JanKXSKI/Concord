@@ -68,7 +68,7 @@ class FConcordPRExpression : public FConcordComputingExpression
 {
 public:
     using FConcordComputingExpression::FConcordComputingExpression;
-    static inline int NumAdditionalSourceExpressions = 0;
+    static constexpr int NumAdditionalSourceExpressions = 0;
 #if WITH_EDITOR
     FString ToString() const override { return TEXT("PR ToString() not implemented."); }
 #endif
@@ -91,11 +91,11 @@ class FConcordPR2GroupsExpression : public FConcordPRExpression<FImpl>
 public:
     using FBase = FConcordPRExpression<FImpl>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
 protected:
     int32 GetBoundaryIndex(const FConcordExpressionContext<float>& Context) const
     {
-        return FBase::SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int;
+        return FMath::Clamp(FBase::SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int, 0, FBase::GetNumDegrees() - 1);
     }
 };
 
@@ -105,7 +105,7 @@ class FConcordPRAdjacentGroupsExpression : public FConcordPR2GroupsExpression<FI
 public:
     using FBase = FConcordPR2GroupsExpression<FImpl>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions;
 private:
     struct FNoteVisitor : FConcordNoteVisitorBase<FNoteVisitor>
     {
@@ -122,7 +122,6 @@ protected:
     {
         const TArrayView<const FConcordSharedExpression> DegreeExpressions { FBase::GetDegreeExpressions() };
         int32 BoundaryIndex = FBase::GetBoundaryIndex(Context);
-        if (BoundaryIndex < 0 || BoundaryIndex >= DegreeExpressions.Num()) return false;
         if (DegreeExpressions[BoundaryIndex]->ComputeValue(Context).Int <= 0) return false;
         FNoteVisitor NoteVisitor { { DegreeExpressions, BoundaryIndex }, OutNotes, 2 };
         if (!NoteVisitor(Context, true)) return false;
@@ -143,7 +142,7 @@ class FConcordPRAdjacentGroupsIntervalExpression : public FConcordPRAdjacentGrou
 public:
     using FBase = FConcordPRAdjacentGroupsExpression<FImpl>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 3;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 3;
     bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
         std::array<FConcordNote, 4> Notes;
@@ -163,7 +162,7 @@ class FConcordGPR1Expression : public FConcordPRExpression<FConcordGPR1Expressio
 public:
     using FBase = FConcordPRExpression<FConcordGPR1Expression>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
 private:
     struct FNoteVisitor : FConcordNoteVisitorBase<FNoteVisitor>
     {
@@ -223,7 +222,7 @@ class FConcordGPR3dExpression : public FConcordPRAdjacentGroupsExpression<FConco
 public:
     using FBase = FConcordPRAdjacentGroupsExpression<FConcordGPR3dExpression>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
     bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
         std::array<FConcordNote, 4> Notes;
@@ -239,7 +238,7 @@ class FConcordGPR5Expression : public FConcordPRAdjacentGroupsExpression<FConcor
 public:
     using FBase = FConcordPRAdjacentGroupsExpression<FConcordGPR5Expression>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
     bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
         const int32 GroupALength = GetBoundaryIndex(Context);
@@ -254,7 +253,7 @@ class FConcordGPR6Expression : public FConcordPR2GroupsExpression<FConcordGPR6Ex
 public:
     using FBase = FConcordPR2GroupsExpression<FConcordGPR6Expression>;
     using FBase::FBase;
-    static inline int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
+    static constexpr int NumAdditionalSourceExpressions = FBase::NumAdditionalSourceExpressions + 1;
 public:
     bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
