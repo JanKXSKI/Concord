@@ -286,7 +286,7 @@ public:
             }
             if (NumParallelPitchEvents == MinParallelSequenceLength) return true;            
         }
-        return false;
+        return bHaveDegrees && (NumParallelPitchEvents + 1 == MinParallelSequenceLength);
     }
 };
 
