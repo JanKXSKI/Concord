@@ -1,4 +1,4 @@
-# Pleas Note
+# Please Note
 Concord is no longer being actively developed.
 
 # Concord
