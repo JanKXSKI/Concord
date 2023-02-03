@@ -13,35 +13,34 @@
 #include "MetasoundTrigger.h"
 #include "MetasoundAudioBuffer.h"
 #include "xmp.h"
+#include "MetasoundFacade.h"
+#include "Internationalization/Text.h"
+#include "MetasoundNodeRegistrationMacro.h"
+#include "MetasoundParamHelper.h"
+#include "MetasoundStandardNodesNames.h"
+#include "MetasoundStandardNodesCategories.h"
+#include "MetasoundNodeInterface.h"
+#include "MetasoundVertex.h"
+#include <type_traits>
 
 namespace Metasound
 {
-    class CONCORDSYSTEM_API FConcordTrackerModulePlayerNode : public FNode
+    class CONCORDSYSTEM_API FConcordTrackerModulePlayerNode : public FNodeFacade
     {
-        class FOperatorFactory : public IOperatorFactory
-        {
-            virtual TUniquePtr<IOperator> CreateOperator(const FBuildOperatorParams& InParams, FBuildResults& OutResults) override;
-        };
-    public:
-        static const FVertexInterface& DeclareVertexInterface();
-        static const FNodeClassMetadata& GetNodeInfo();
-
-        FConcordTrackerModulePlayerNode(const FVertexName& InName, const FGuid& InInstanceID);
-        FConcordTrackerModulePlayerNode(const FNodeInitData& InInitData);
-        virtual ~FConcordTrackerModulePlayerNode() = default;
-
-        virtual FOperatorFactorySharedRef GetDefaultOperatorFactory() const override { return Factory; }
-        virtual const FVertexInterface& GetVertexInterface() const override { return Interface; }
-        virtual bool SetVertexInterface(const FVertexInterface& InInterface) override { return InInterface == Interface; }
-        virtual bool IsVertexInterfaceSupported(const FVertexInterface& InInterface) const override { return InInterface == Interface; }
-    private:
-        FOperatorFactorySharedRef Factory;
-        FVertexInterface Interface;
-    };
+	public:
+		FConcordTrackerModulePlayerNode(const FNodeInitData& InitData);
+		virtual ~FConcordTrackerModulePlayerNode() = default;
+	};
 
     class CONCORDSYSTEM_API FConcordTrackerModulePlayerOperator : public TExecutableOperator<FConcordTrackerModulePlayerOperator>
     {	
     public:
+
+        static const FNodeClassMetadata& GetNodeInfo();
+        static const FVertexInterface& GetVertexInterface();
+        static TUniquePtr<IOperator> CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors);
+
+        
         FConcordTrackerModulePlayerOperator(const FOperatorSettings& InSettings,
                                const FConcordMetasoundTrackerModuleAssetReadRef& InTrackerModuleAsset,
                                const FConcordMetasoundPatternAssetReadRef& InPatternAsset,

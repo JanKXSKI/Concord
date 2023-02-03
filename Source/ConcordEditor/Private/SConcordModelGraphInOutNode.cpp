@@ -5,6 +5,7 @@
 #include "ConcordModelGraphModelNode.h"
 #include "Widgets/Text/SInlineEditableTextBlock.h"
 #include "Styling/SlateStyleRegistry.h"
+#include "EditorStyleSet.h"
 
 void SConcordModelGraphInOutNode::Construct(const FArguments& InArgs, UEdGraphNode* InGraphNode)
 {

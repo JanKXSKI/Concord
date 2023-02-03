@@ -372,9 +372,9 @@ int32 FConcordFactorGraphTranspiler::Transpile(const FConcordComputingExpression
     int32 TemplateIndex; if (!GetIndex(Key, TemplateIndex))
     {
         TemplateIndex = CurrentIndex++;
-        Out.Write(TEXT("template")).WriteSequence(MaxArgIndex, TEXT("<"), TEXT(", "), TEXT(">\n"), [](auto& LocalOut, int32 Index){ LocalOut.Write(TEXT("typename FArg")).Write(Index); })
+        Out.Write(TEXT("template")).WriteSequence(MaxArgIndex, TEXT("<"), TEXT(", "), TEXT(">\n"), [](auto& Out, int32 Index){ Out.Write(TEXT("typename FArg")).Write(Index); })
         .Write(TEXT("struct ")).WriteName(TemplateIndex).Write(TEXT(" : FConcordIndexCount"))
-        .WriteSequence(MaxArgIndex, TEXT("<"), TEXT(", "), TEXT(">"), [](auto& LocalOut, int32 Index){ LocalOut.Write(TEXT("FArg")).Write(Index); })
+        .WriteSequence(MaxArgIndex, TEXT("<"), TEXT(", "), TEXT(">"), [](auto& Out, int32 Index){ Out.Write(TEXT("FArg")).Write(Index); })
         .Write(TEXT("\n{"))
         .Indent(1).WriteTemplateEvalTop(NativeTypeString(ExpectedType))
         .Write(*ExpressionString, (*ExpressionVariables)[0].Begin);
@@ -382,7 +382,7 @@ int32 FConcordFactorGraphTranspiler::Transpile(const FConcordComputingExpression
         {
             const FExpressionVariable& ExpressionVariable = (*ExpressionVariables)[ExpressionVariableIndex];
             Out.Write(TEXT("FArg")).Write(ExpressionVariable.ArgIndex).Write(TEXT("::Eval(Context, Indices"))
-            .WriteSequence(ExpressionVariable.ArgIndex - 1, TEXT(" + "), TEXT(" + "), TEXT(""), [](auto& LocalOut, int32 Index){ LocalOut.Write(TEXT("FArg")).Write(Index).Write(TEXT("::IndexCount")); })
+            .WriteSequence(ExpressionVariable.ArgIndex - 1, TEXT(" + "), TEXT(" + "), TEXT(""), [](auto& Out, int32 Index){ Out.Write(TEXT("FArg")).Write(Index).Write(TEXT("::IndexCount")); })
             .Write(ExpressionVariable.SourceExpressionArrayNum != 0 ? TEXT(", ") : TEXT(")"));
             const int32 StretchEnd = (ExpressionVariableIndex < ExpressionVariables->Num() - 1) ? (*ExpressionVariables)[ExpressionVariableIndex + 1].Begin : ExpressionString.Len();
             Out.Write(*ExpressionString + ExpressionVariable.End, StretchEnd - ExpressionVariable.End);
@@ -407,7 +407,7 @@ int32 FConcordFactorGraphTranspiler::Transpile(const FConcordComputingExpression
     Instantiation.ArgumentIndices = MoveTemp(ArgumentInstanceIndices);
     Out.Write(TEXT("using ")).WriteName(Instantiation.InstanceIndex).Write(TEXT(" = ")).WriteName(TemplateIndex);
     if (!Instantiation.ArgumentIndices.IsEmpty())
-        Out.WriteArray(Instantiation.ArgumentIndices, TEXT("<"), TEXT(", "), TEXT(">"), [](auto& LocalOut, int32 Index){ LocalOut.WriteName(Index); });
+        Out.WriteArray(Instantiation.ArgumentIndices, TEXT("<"), TEXT(", "), TEXT(">"), [](auto& Out, int32 Index){ Out.WriteName(Index); });
     Out.Write(TEXT(";\n"));
     return Instantiation.InstanceIndex;
 }
@@ -640,7 +640,7 @@ FConcordFactorGraphTranspiler::FOutput& FConcordFactorGraphTranspiler::FOutput::
 
 FConcordFactorGraphTranspiler::FOutput& FConcordFactorGraphTranspiler::FOutput::WriteArray(const TArray<int32>& Array)
 {
-    return WriteArray(Array, TEXT("{ "), TEXT(", "), TEXT(" }"), [](auto& LocalOut, int32 Index){ LocalOut.Write(Index); });
+    return WriteArray(Array, TEXT("{ "), TEXT(", "), TEXT(" }"), [](auto& Out, int32 Index){ Out.Write(Index); });
 }
 
 template<typename FIntToString>

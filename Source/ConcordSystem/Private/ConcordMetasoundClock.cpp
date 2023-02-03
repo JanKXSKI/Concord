@@ -4,39 +4,15 @@
 
 using namespace Metasound;
 
-TUniquePtr<IOperator> FConcordClockNode::FOperatorFactory::CreateOperator(const FBuildOperatorParams& InParams, 
-                                                                          FBuildResults& OutResults) 
+
+Metasound::FConcordClockNode::FConcordClockNode(const FNodeInitData& InitData)
+    : FNodeFacade(InitData.InstanceName, InitData.InstanceID, TFacadeOperatorClass<FConcordClockOperator>())
 {
-    const FInputVertexInterfaceData& Inputs = InParams.InputData;
-    return MakeUnique<FConcordClockOperator>(InParams.OperatorSettings,
-                                             Inputs.GetOrCreateDefaultDataReadReference<FTrigger>("Start", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<FTrigger>("Stop", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<float>("BPM", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<int32>("Lines per Beat", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<int32>("Start Line", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<int32>("Number of Lines", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<float>("Shuffle", InParams.OperatorSettings),
-                                             Inputs.GetOrCreateDefaultDataReadReference<bool>("Loop", InParams.OperatorSettings));
 }
 
-const FVertexInterface& FConcordClockNode::DeclareVertexInterface()
-{
-    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertex<FTrigger>("Start", { INVTEXT("Start the Clock."), INVTEXT("Start") }),
-                                                                        TInputDataVertex<FTrigger>("Stop", { INVTEXT("Stop the Clock."), INVTEXT("Stop") }),
-                                                                        TInputDataVertex<float>("BPM", { INVTEXT("BPM."), INVTEXT("BPM") }, 120.0f),
-                                                                        TInputDataVertex<int32>("Lines per Beat", { INVTEXT("Number of lines for that make up one beat."), INVTEXT("Lines per Beat") }, 4),
-                                                                        TInputDataVertex<int32>("Start Line", { INVTEXT("The line to start the clock at."), INVTEXT("Start Line") }, 0),
-                                                                        TInputDataVertex<int32>("Number of Lines", { INVTEXT("Number of lines in the pattern."), INVTEXT("Number of Lines") }, 32),
-                                                                        TInputDataVertex<float>("Shuffle", { INVTEXT("Moves every second line towards the next."), INVTEXT("Shuffle") }, 0.0f),
-                                                                        TInputDataVertex<bool>("Loop", { INVTEXT("Loop the Clock instead of stopping when finished."), INVTEXT("Loop") }, true)),
-                                                  FOutputVertexInterface(TOutputDataVertex<FTrigger>("On Line", { INVTEXT("On line trigger."), INVTEXT("On Line") }),
-                                                                         TOutputDataVertex<int32>("Index", { INVTEXT("Index."), INVTEXT("Index") }),
-                                                                         TOutputDataVertex<float>("Alpha", { INVTEXT("Alpha (between 0 and 1)."), INVTEXT("Alpha") }),
-                                                                         TOutputDataVertex<FTrigger>("On Start", { INVTEXT("On start trigger (useful for syncing when looping)."), INVTEXT("On Start") })));
-    return VertexInterface;
-}
 
-const FNodeClassMetadata& FConcordClockNode::GetNodeInfo()
+
+const FNodeClassMetadata& Metasound::FConcordClockOperator::GetNodeInfo()
 {
     auto InitNodeInfo = []() -> FNodeClassMetadata
     {
@@ -48,7 +24,7 @@ const FNodeClassMetadata& FConcordClockNode::GetNodeInfo()
         Info.Description = INVTEXT("Outputs timing for reading from Concord lines.");
         Info.Author = TEXT("Jan Klimaschewski");
         Info.PromptIfMissing = INVTEXT("Missing :(");
-        Info.DefaultInterface = DeclareVertexInterface();
+        Info.DefaultInterface = GetVertexInterface();
 
         return Info;
     };
@@ -58,14 +34,39 @@ const FNodeClassMetadata& FConcordClockNode::GetNodeInfo()
     return Info;
 }
 
-FConcordClockNode::FConcordClockNode(const FVertexName& InName, const FGuid& InInstanceID)
-    :	FNode(InName, InInstanceID, GetNodeInfo())
-    ,	Factory(MakeOperatorFactoryRef<FConcordClockNode::FOperatorFactory>())
-    ,	Interface(DeclareVertexInterface())
-{}
-FConcordClockNode::FConcordClockNode(const FNodeInitData& InInitData)
-    : FConcordClockNode(InInitData.InstanceName, InInitData.InstanceID)
-{}
+const FVertexInterface& Metasound::FConcordClockOperator::GetVertexInterface()
+{
+    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertexModel<FTrigger>("Start", INVTEXT("Start the Clock.")),
+        TInputDataVertexModel<FTrigger>("Stop", INVTEXT("Stop the Clock.")),
+        TInputDataVertexModel<float>("BPM", INVTEXT("BPM."), 120.0f),
+        TInputDataVertexModel<int32>("Lines per Beat", INVTEXT("Number of lines for that make up one beat."), 4),
+        TInputDataVertexModel<int32>("Start Line", INVTEXT("The line to start the clock at."), 0),
+        TInputDataVertexModel<int32>("Number of Lines", INVTEXT("Number of lines in the pattern."), 32),
+        TInputDataVertexModel<float>("Shuffle", INVTEXT("Moves every second line towards the next."), 0.0f),
+        TInputDataVertexModel<bool>("Loop", INVTEXT("Loop the Clock instead of stopping when finished."), true)),
+        FOutputVertexInterface(TOutputDataVertexModel<FTrigger>("On Line", INVTEXT("On line trigger.")),
+            TOutputDataVertexModel<int32>("Index", INVTEXT("Index.")),
+            TOutputDataVertexModel<float>("Alpha", INVTEXT("Alpha (between 0 and 1).")),
+            TOutputDataVertexModel<FTrigger>("On Start", INVTEXT("On start trigger (useful for syncing when looping)."))));
+    return VertexInterface;
+}
+
+TUniquePtr<IOperator> Metasound::FConcordClockOperator::CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors)
+{
+    const FConcordClockNode& Node = static_cast<const FConcordClockNode&>(InParams.Node);
+    const FDataReferenceCollection& Inputs = InParams.InputDataReferences;
+    const FInputVertexInterface& InputInterface = GetVertexInterface().GetInputInterface();
+
+    return MakeUnique<FConcordClockOperator>(InParams.OperatorSettings,
+                                             Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Start", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Stop", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<float>(InputInterface, "BPM", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Lines per Beat", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Start Line", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Number of Lines", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<float>(InputInterface, "Shuffle", InParams.OperatorSettings),
+                                             Inputs.GetDataReadReferenceOrConstructWithVertexDefault<bool>(InputInterface, "Loop", InParams.OperatorSettings));
+}
 
 FDataReferenceCollection FConcordClockOperator::GetInputs() const
 {
@@ -161,3 +162,4 @@ int32 FConcordClockOperator::ShuffleFrame(int32 Frame, int32 InIndex) const
     const float ShuffleFactor = FMath::GetMappedRangeValueClamped(TRange<float>(0.0f, 1.0f), TRange<float>(0.0f, 0.75f), *Shuffle);
     return Frame + int32(ShuffleFactor * (60.0f / ((*BPM) * (*LinesPerBeat))) * Settings.GetSampleRate());
 }
+

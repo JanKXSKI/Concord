@@ -122,7 +122,7 @@ bool SConcordModelGraphOutput::CheckHighlightAndGetIsNotes(int32 NumValues) cons
 {
     const TOptional<FConcordColumnPath> ColumnPath = FConcordColumnPath::Parse(Cast<UConcordModelGraphOutput>(GraphNode)->Name.ToString());
     Highlight->SetNeedsHighlight(ColumnPath.IsSet(), NumValues);
-    if (ColumnPath) return ColumnPath.GetValue().ColumnValuesType == EConcordColumnValuesType::Note;
+    if (ColumnPath) return ColumnPath.GetValue().ColumnType == FConcordColumnPath::Note;
     return false;
 }
 

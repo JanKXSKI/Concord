@@ -10,6 +10,7 @@
 #include "SLevelOfDetailBranchNode.h"
 #include "Math/Color.h"
 #include "Rendering/SlateRenderTransform.h"
+#include "EditorStyleSet.h"
 
 void SConcordModelGraphPin::Construct(const FArguments& InArgs, UEdGraphPin* InPin)
 {

@@ -83,7 +83,7 @@ public:
 private:
     const FConcordFactorGraph<FFloatType>* FactorGraph;
     FConcordExpressionContextMutable<FFloatType> Context;
-    typename FConcordFactorHandleBase<FFloatType>:: template FSumProductMessages<FSumProductMessageFloatType> Messages;
+    FConcordFactorHandleBase<FFloatType>::FSumProductMessages<FSumProductMessageFloatType> Messages;
     friend class FSumProductTask;
 
     void Reset()

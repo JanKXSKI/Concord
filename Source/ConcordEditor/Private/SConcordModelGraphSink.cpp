@@ -7,6 +7,7 @@
 #include "Math/Color.h"
 #include "Rendering/SlateRenderTransform.h"
 #include "SConcordModelGraphPin.h"
+#include "EditorStyleSet.h"
 
 void SConcordModelGraphSink::Construct(const FArguments& InArgs, UEdGraphNode* InGraphNode)
 {
@@ -21,6 +22,7 @@ void SConcordModelGraphSink::Construct(const FArguments& InArgs, UEdGraphNode* I
 TSharedRef<SWidget> SConcordModelGraphSink::CreateNodeContentArea()
 {
     return SNew(SBorder)
+    //.BorderImage(FEditorStyle::GetBrush("NoBorder"))
     .BorderImage(FAppStyle::GetBrush("NoBorder"))
     .HAlign(HAlign_Fill)
     .VAlign(VAlign_Fill)

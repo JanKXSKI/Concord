@@ -37,9 +37,9 @@ FConcordCompiler::FResult FConcordCompiler::Compile(const UConcordModel* Model, 
 
     FConcordCompiler Compiler; Compiler.ModelPath.Add(Model);
     FResult Result;
-    if ((Result.Error = Compiler.CompileCompositeModel(TStrongObjectPtr<const UConcordModel>(Model), Result.FactorGraph.Get()))) return MoveTemp(Result);
-    if ((Result.Error = Compiler.SetDisjointSubgraphRootFlatRandomVariableIndices(Result.FactorGraph.Get()))) return MoveTemp(Result);
-    if ((Result.Error = Compiler.HandleCycles(CycleMode, Result.FactorGraph.Get()))) return MoveTemp(Result);
+    if (Result.Error = Compiler.CompileCompositeModel(TStrongObjectPtr<const UConcordModel>(Model), Result.FactorGraph.Get())) return MoveTemp(Result);
+    if (Result.Error = Compiler.SetDisjointSubgraphRootFlatRandomVariableIndices(Result.FactorGraph.Get())) return MoveTemp(Result);
+    if (Result.Error = Compiler.HandleCycles(CycleMode, Result.FactorGraph.Get())) return MoveTemp(Result);
     Result.FactorGraph->CompactAndShrink();
     return MoveTemp(Result);
 }

@@ -1,42 +1,43 @@
 // Copyright 2022 Jan Klimaschewski. All Rights Reserved.
 
 #pragma once
-
+#include "Internationalization/Text.h"
+#include "MetasoundExecutableOperator.h"
+#include "MetasoundNodeRegistrationMacro.h"
+#include "MetasoundParamHelper.h"
+#include "MetasoundPrimitives.h"
+#include "MetasoundStandardNodesNames.h"
+#include "MetasoundStandardNodesCategories.h"
+#include "MetasoundFacade.h"
 #include "CoreMinimal.h"
 #include "MetasoundNode.h"
 #include "MetasoundBuilderInterface.h"
-#include "MetasoundExecutableOperator.h"
-#include "MetasoundPrimitives.h"
 #include "MetasoundTrigger.h"
+#include "MetasoundNodeInterface.h"
+#include "MetasoundVertex.h"
+#include <type_traits>
 
 namespace Metasound
 {
-    class CONCORDSYSTEM_API FConcordClockNode : public FNode
+    class CONCORDSYSTEM_API FConcordClockNode : public FNodeFacade
     {
-        class FOperatorFactory : public IOperatorFactory
-        {
-            virtual TUniquePtr<IOperator> CreateOperator(const FBuildOperatorParams& InParams, FBuildResults& OutResults) override;
-        };
-    public:
-        static const FVertexInterface& DeclareVertexInterface();
-        static const FNodeClassMetadata& GetNodeInfo();
 
-        FConcordClockNode(const FVertexName& InName, const FGuid& InInstanceID);
-        FConcordClockNode(const FNodeInitData& InInitData);
+    public:
+        
+        FConcordClockNode(const FNodeInitData& InitData);
         virtual ~FConcordClockNode() = default;
 
-        virtual FOperatorFactorySharedRef GetDefaultOperatorFactory() const override { return Factory; }
-        virtual const FVertexInterface& GetVertexInterface() const override { return Interface; }
-        virtual bool SetVertexInterface(const FVertexInterface& InInterface) override { return InInterface == Interface; }
-        virtual bool IsVertexInterfaceSupported(const FVertexInterface& InInterface) const override { return InInterface == Interface; }
-    private:
-        FOperatorFactorySharedRef Factory;
-        FVertexInterface Interface;
+        
     };
 
     class CONCORDSYSTEM_API FConcordClockOperator : public TExecutableOperator<FConcordClockOperator>
     {	
     public:
+
+		static const FNodeClassMetadata& GetNodeInfo();
+		static const FVertexInterface& GetVertexInterface();
+		static TUniquePtr<IOperator> CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors);
+        
         FConcordClockOperator(const FOperatorSettings& InSettings,
                               const FTriggerReadRef& InStart,
                               const FTriggerReadRef& InStop,

@@ -6,7 +6,7 @@
 #include "ConcordParameter.h"
 #include "ConcordOutput.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "AssetRegistry/AssetData.h"
+#include "AssetData.h"
 #include "FileHelpers.h"
 
 FText UConcordModelGraphModelNode::GetNodeTitle(ENodeTitleType::Type TitleType) const
@@ -128,9 +128,9 @@ void UConcordModelGraphComposite::GetMenuEntries(FGraphContextMenuBuilder& Conte
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
     TArray<FAssetData> AssetDatas;
-    AssetRegistryModule.Get().GetAssetsByClass(UConcordModel::StaticClass()->GetClassPathName(), AssetDatas);
+    AssetRegistryModule.Get().GetAssetsByClass(UConcordModel::StaticClass()->GetFName(), AssetDatas);
     for (const FAssetData& AssetData : AssetDatas)
-        if (AssetData.GetSoftObjectPath() != Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName())
+        if (AssetData.ObjectPath != FName(Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName()))
             ContextMenuBuilder.AddAction(MakeShared<FConcordModelGraphAddNodeAction_NewComposite>(AssetData));
 }
 
@@ -175,10 +175,10 @@ void UConcordModelGraphInstance::GetMenuEntries(FGraphContextMenuBuilder& Contex
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
     TArray<FAssetData> AssetDatas;
-    AssetRegistryModule.Get().GetAssetsByClass(UConcordModelBase::StaticClass()->GetClassPathName(), AssetDatas, true);
+    AssetRegistryModule.Get().GetAssetsByClass(UConcordModelBase::StaticClass()->GetFName(), AssetDatas, true);
     for (const FAssetData& AssetData : AssetDatas)
     {
-        if (AssetData.GetSoftObjectPath() == Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName()) continue;
+        if (AssetData.ObjectPath == FName(Cast<UConcordModelGraph>(ContextMenuBuilder.CurrentGraph)->GetModel()->GetPathName())) continue;
         const UConcordModel* ModelAsset = Cast<UConcordModel>(AssetData.GetAsset());
         if (ModelAsset && ModelAsset->Boxes.IsEmpty()) continue; // models without boxes should be added as composites, not instances
         ContextMenuBuilder.AddAction(MakeShared<FConcordModelGraphAddNodeAction_NewInstance>(AssetData));

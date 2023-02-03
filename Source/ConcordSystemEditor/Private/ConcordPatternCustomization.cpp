@@ -98,9 +98,9 @@ void FConcordPatternCustomization::ExportMidi() const
 void UConcordPatternUtilities::ExportMidi(UConcordPattern* Pattern, const FString& Filename)
 {
 	smf::MidiFile File;
+	int32 TrackIndex = 0;
 	for (const auto& NameTrackPair : Pattern->PatternData.Tracks)
 	{
-        const int32 TrackIndex = File.addTrack();
 		for (const FConcordColumn& Column : NameTrackPair.Value.Columns)
 		{
 			int32 LastNote = -1;
@@ -127,6 +127,7 @@ void UConcordPatternUtilities::ExportMidi(UConcordPattern* Pattern, const FStrin
 				File.addNoteOff(TrackIndex, Tick, 0, LastNote);
 			}
 		}
+		++TrackIndex;
 	}
 	File.sortTracks();
 	File.write(TCHAR_TO_UTF8(*Filename));

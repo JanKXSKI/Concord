@@ -68,7 +68,7 @@ private:
     void SetOutputNodeValues(UConcordModelGraphOutput* OutputNode, const FConcordSampler& Sampler) const;
 
     void SelectedOutputsToCrate();
-    void ExportTikz() const;
+
 
     enum class EDistributions
     {

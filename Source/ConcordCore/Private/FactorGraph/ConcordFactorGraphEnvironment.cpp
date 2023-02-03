@@ -10,8 +10,8 @@ FConcordFactorGraphEnvironment<FFloatType>::FConcordFactorGraphEnvironment(const
 {
     StagingVariation.Init(0, FactorGraph->GetRandomVariableCount());
     StagingMask.Init(false, FactorGraph->GetRandomVariableCount());
-    StagingIntParameters = FactorGraph-> template GetParameterDefaultValues<int32>();
-    StagingFloatParameters = MakeArrayView(FactorGraph-> template GetParameterDefaultValues<float>());
+    StagingIntParameters = FactorGraph->GetParameterDefaultValues<int32>();
+    StagingFloatParameters = MakeArrayView(FactorGraph->GetParameterDefaultValues<float>());
     SetMaskAndParametersFromStagingArea();
 }
 
@@ -33,13 +33,13 @@ void FConcordFactorGraphEnvironment<FFloatType>::ReturnSampledVariationToStaging
 template<typename FFloatType>
 template<typename FValue> void FConcordFactorGraphEnvironment<FFloatType>::SetParameter(const FName& ParameterName, int32 FlatParameterLocalIndex, FValue Value)
 {
-    GetStagingParameters<FValue>()[FactorGraph-> template GetParameterBlocks<FValue>()[ParameterName].Offset + FlatParameterLocalIndex] = Value;
+    GetStagingParameters<FValue>()[FactorGraph->GetParameterBlocks<FValue>()[ParameterName].Offset + FlatParameterLocalIndex] = Value;
 }
 
 template<typename FFloatType>
 template<typename FValue> FValue FConcordFactorGraphEnvironment<FFloatType>::GetParameter(const FName& ParameterName, int32 FlatParameterLocalIndex) const
 {
-    return GetStagingParameters<FValue>()[FactorGraph-> template GetParameterBlocks<FValue>()[ParameterName].Offset + FlatParameterLocalIndex];
+    return GetStagingParameters<FValue>()[FactorGraph->GetParameterBlocks<FValue>()[ParameterName].Offset + FlatParameterLocalIndex];
 }
 
 template<typename FValue> struct FDefaultValue { using type = float; };
@@ -48,9 +48,9 @@ template<> struct FDefaultValue<int32> { using type = int32; };
 template<typename FFloatType>
 template<typename FValue> void FConcordFactorGraphEnvironment<FFloatType>::ResetParameter(const FName& ParameterName)
 {
-    const FConcordFactorGraphBlock& Block = FactorGraph-> template GetParameterBlocks<FValue>()[ParameterName];
+    const FConcordFactorGraphBlock& Block = FactorGraph->GetParameterBlocks<FValue>()[ParameterName];
     for (int32 Index = Block.Offset; Index < Block.Offset + Block.Size; ++Index)
-        GetStagingParameters<FValue>()[Index] = FactorGraph-> template GetParameterDefaultValues<typename FDefaultValue<FValue>::type>()[Index];
+        GetStagingParameters<FValue>()[Index] = FactorGraph->GetParameterDefaultValues<typename FDefaultValue<FValue>::type>()[Index];
 }
 
 template<typename FFloatType>
@@ -129,7 +129,7 @@ template<typename FEnvFloat, typename FArg> using FBlockType_t = typename FBlock
 template<typename FFloatType>
 template<typename FValue> bool FConcordFactorGraphEnvironment<FFloatType>::TrySetParameterBlock(const FName& BlockName, const TArray<FValue>& Values)
 {
-    const FConcordFactorGraphBlock* ParameterBlock = FactorGraph-> template GetParameterBlocks<FBlockType_t<FFloatType, FValue>>().Find(BlockName);
+    const FConcordFactorGraphBlock* ParameterBlock = FactorGraph->GetParameterBlocks<FBlockType_t<FFloatType, FValue>>().Find(BlockName);
     if (!ParameterBlock) return false;
     if (Values.Num() != ParameterBlock->Size) UE_LOG(LogConcordFactorGraphEnvironment, Warning, TEXT("Block %s is not of the expected size, some values are not set."), *BlockName.ToString());
     for (int32 Index = 0; Index < FMath::Min(Values.Num(), ParameterBlock->Size); ++Index) SetParameter<FBlockType_t<FFloatType, FValue>>(BlockName, Index, Values[Index]);
@@ -154,13 +154,13 @@ void FConcordFactorGraphEnvironment<FFloatType>::UnsetName(const FName& Name)
 template<typename FFloatType>
 template<typename FValue> bool FConcordFactorGraphEnvironment<FFloatType>::TryUnsetParameterBlock(const FName& BlockName)
 {
-    const FConcordFactorGraphBlock* ParameterBlock = FactorGraph-> template GetParameterBlocks<FValue>().Find(BlockName);
+    const FConcordFactorGraphBlock* ParameterBlock = FactorGraph->GetParameterBlocks<FValue>().Find(BlockName);
     if (!ParameterBlock) return false;
     ResetParameter<FValue>(BlockName);
     return true;
 }
 
-template class CONCORDCORE_API FConcordFactorGraphEnvironment<float>;
+template CONCORDCORE_API class FConcordFactorGraphEnvironment<float>;
 template CONCORDCORE_API void FConcordFactorGraphEnvironment<float>::SetParameter(const FName&, int32, int32);
 template CONCORDCORE_API void FConcordFactorGraphEnvironment<float>::SetParameter(const FName&, int32, float);
 template CONCORDCORE_API int32 FConcordFactorGraphEnvironment<float>::GetParameter<int32>(const FName&, int32) const;

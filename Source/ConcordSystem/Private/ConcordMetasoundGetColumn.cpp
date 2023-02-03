@@ -1,31 +1,17 @@
 // Copyright 2022 Jan Klimaschewski. All Rights Reserved.
 
 #include "ConcordMetasoundGetColumn.h"
+#include "MetasoundNode.h"
 #include "MetasoundLog.h"
 
 using namespace Metasound;
 
-TUniquePtr<IOperator> FConcordGetColumnNode::FOperatorFactory::CreateOperator(const FBuildOperatorParams& InParams, 
-                                                                              FBuildResults& OutResults)
-{
-    const FInputVertexInterfaceData& Inputs = InParams.InputData;
-    return MakeUnique<FConcordGetColumnOperator>(Inputs.GetOrCreateDefaultDataReadReference<FTrigger>("Trigger", InParams.OperatorSettings),
-                                                 Inputs.GetOrCreateDefaultDataReadReference<FConcordMetasoundPatternAsset>("Pattern", InParams.OperatorSettings),
-                                                 Inputs.GetOrCreateDefaultDataReadReference<FString>("Column Path", InParams.OperatorSettings),
-                                                 Inputs.GetOrCreateDefaultDataReadReference<int32>("Column Index Override", InParams.OperatorSettings));
-}
 
-const FVertexInterface& FConcordGetColumnNode::DeclareVertexInterface()
-{
-    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertex<FTrigger>("Trigger", { INVTEXT("Trigger an update of the output column."), INVTEXT("Trigger") }),
-                                                                        TInputDataVertex<FConcordMetasoundPatternAsset>("Pattern", { INVTEXT("Pattern to read from."), INVTEXT("Pattern") }),
-                                                                        TInputDataVertex<FString>("Column Path", { INVTEXT("The path to the column."), INVTEXT("Column Path") }, FString(TEXT("Kick/Notes"))),
-                                                                        TInputDataVertex<int32>("Column Index Override", { INVTEXT("Overrides the column index given in the column path if the override index is non-negative."), INVTEXT("Column Index Override") }, -1)),
-                                                  FOutputVertexInterface(TOutputDataVertex<TArray<int32>>("Column", { INVTEXT("The column."), INVTEXT("Column") })));
-    return VertexInterface;
-}
+FConcordGetColumnNode::FConcordGetColumnNode(const FNodeInitData& InitData)
+    : FNodeFacade(InitData.InstanceName, InitData.InstanceID, TFacadeOperatorClass<FConcordGetColumnOperator>())
+{}
 
-const FNodeClassMetadata& FConcordGetColumnNode::GetNodeInfo()
+const FNodeClassMetadata& Metasound::FConcordGetColumnOperator::GetNodeInfo()
 {
     auto InitNodeInfo = []() -> FNodeClassMetadata
     {
@@ -37,7 +23,7 @@ const FNodeClassMetadata& FConcordGetColumnNode::GetNodeInfo()
         Info.Description = INVTEXT("Gets a column from a Concord pattern.");
         Info.Author = TEXT("Jan Klimaschewski");
         Info.PromptIfMissing = INVTEXT("Missing :(");
-        Info.DefaultInterface = DeclareVertexInterface();
+        Info.DefaultInterface = GetVertexInterface();
 
         return Info;
     };
@@ -47,14 +33,27 @@ const FNodeClassMetadata& FConcordGetColumnNode::GetNodeInfo()
     return Info;
 }
 
-FConcordGetColumnNode::FConcordGetColumnNode(const FVertexName& InName, const FGuid& InInstanceID)
-    :	FNode(InName, InInstanceID, GetNodeInfo())
-    ,	Factory(MakeOperatorFactoryRef<FConcordGetColumnNode::FOperatorFactory>())
-    ,	Interface(DeclareVertexInterface())
-{}
-FConcordGetColumnNode::FConcordGetColumnNode(const FNodeInitData& InInitData)
-    : FConcordGetColumnNode(InInitData.InstanceName, InInitData.InstanceID)
-{}
+const FVertexInterface& Metasound::FConcordGetColumnOperator::GetVertexInterface()
+{
+    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertexModel<FTrigger>("Trigger", INVTEXT("Trigger an update of the output column.")),
+        TInputDataVertexModel<FConcordMetasoundPatternAsset>("Pattern", INVTEXT("Pattern to read from.")),
+        TInputDataVertexModel<FString>("Column Path", INVTEXT("The path to the column."), FString(TEXT("Kick/Notes"))),
+        TInputDataVertexModel<int32>("Column Index Override", INVTEXT("Overrides the column index given in the column path if the override index is non-negative."), -1)),
+        FOutputVertexInterface(TOutputDataVertexModel<TArray<int32>>("Column", INVTEXT("The column."))));
+    return VertexInterface;
+}
+
+TUniquePtr<IOperator> Metasound::FConcordGetColumnOperator::CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors)
+{
+    const FConcordGetColumnNode& Node = static_cast<const FConcordGetColumnNode&>(InParams.Node);
+    const FDataReferenceCollection& Inputs = InParams.InputDataReferences;
+    const FInputVertexInterface& InputInterface = GetVertexInterface().GetInputInterface();
+
+    return MakeUnique<FConcordGetColumnOperator>(Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Trigger", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstruct<FConcordMetasoundPatternAsset>("Pattern"),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<FString>(InputInterface, "Column Path", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Column Index Override", InParams.OperatorSettings));
+}
 
 FDataReferenceCollection FConcordGetColumnOperator::GetInputs() const
 {
@@ -84,12 +83,12 @@ void FConcordGetColumnOperator::Execute()
     int32 ColumnIndex = Path.ColumnIndex;
     if (*ColumnIndexOverride >= 0) ColumnIndex = *ColumnIndexOverride;
     if (ColumnIndex >= FoundTrack->Columns.Num()) { UE_LOG(LogMetaSound, Error, TEXT("Concord Get Column: Column index %i out of range in %s."), ColumnIndex, **ColumnPath); return; }
-    switch (Path.ColumnValuesType)
+    switch (Path.ColumnType)
     {
-    case EConcordColumnValuesType::Note: SetColumn(FoundTrack->Columns[ColumnIndex].NoteValues); break;
-    case EConcordColumnValuesType::Instrument: SetColumn(FoundTrack->Columns[ColumnIndex].InstrumentValues); break;
-    case EConcordColumnValuesType::Volume: SetColumn(FoundTrack->Columns[ColumnIndex].VolumeValues); break;
-    case EConcordColumnValuesType::Delay: SetColumn(FoundTrack->Columns[ColumnIndex].DelayValues); break;
+    case FConcordColumnPath::Note: SetColumn(FoundTrack->Columns[ColumnIndex].NoteValues); break;
+    case FConcordColumnPath::Instrument: SetColumn(FoundTrack->Columns[ColumnIndex].InstrumentValues); break;
+    case FConcordColumnPath::Volume: SetColumn(FoundTrack->Columns[ColumnIndex].VolumeValues); break;
+    case FConcordColumnPath::Delay: SetColumn(FoundTrack->Columns[ColumnIndex].DelayValues); break;
     }
 }
 

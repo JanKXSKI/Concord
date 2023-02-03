@@ -27,7 +27,7 @@
 #define CONCORD_Hypot(X) hypot(X##0, X##1)
 
 #if WITH_EDITOR
-#define CONCORD_BINARY_OPERATOR_TO_STRING(Name) FString ToString() const override { return FString::Printf(TEXT("\n        return ") CONCORD_XSTR(CONCORD_##Name(%s)) TEXT(";\n"), Concord::ExpressionVariableString<FValue>(), Concord::ExpressionVariableString<FValue>()); }
+#define CONCORD_BINARY_OPERATOR_TO_STRING(Name) FString ToString() const override { return FString::Format(TEXT("\n        return ") CONCORD_XSTR(CONCORD_##Name({0})) TEXT(";\n"), { Concord::ExpressionVariableString<FValue>() }); }
 #else
 #define CONCORD_BINARY_OPERATOR_TO_STRING(Name)  
 #endif
@@ -43,8 +43,8 @@
         FConcordOperator##Name##Expression(TArray<FConcordSharedExpression>&& InSourceExpressions): FConcordComputingExpression(MoveTemp(InSourceExpressions)) {}\
         FConcordValue ComputeValue(const FConcordExpressionContext<float>& Context) const override\
         {\
-            const FValue V0 = SourceExpressions[0]->ComputeValue(Context). template Get<FValue>();\
-            const FValue V1 = SourceExpressions[1]->ComputeValue(Context). template Get<FValue>();\
+            const FValue V0 = SourceExpressions[0]->ComputeValue(Context).Get<FValue>();\
+            const FValue V1 = SourceExpressions[1]->ComputeValue(Context).Get<FValue>();\
             return CONCORD_##Name(V);\
         }\
         CONCORD_BINARY_OPERATOR_TO_STRING(Name)\

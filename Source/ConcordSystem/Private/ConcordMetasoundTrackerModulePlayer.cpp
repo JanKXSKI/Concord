@@ -5,39 +5,13 @@
 
 using namespace Metasound;
 
-TUniquePtr<IOperator> FConcordTrackerModulePlayerNode::FOperatorFactory::CreateOperator(const FBuildOperatorParams& InParams, 
-                                                                                        FBuildResults& OutResults)
+Metasound::FConcordTrackerModulePlayerNode::FConcordTrackerModulePlayerNode(const FNodeInitData& InitData)
+    : FNodeFacade(InitData.InstanceName, InitData.InstanceID, TFacadeOperatorClass<FConcordTrackerModulePlayerOperator>())
 {
-    const FInputVertexInterfaceData& Inputs = InParams.InputData;
-    return MakeUnique<FConcordTrackerModulePlayerOperator>(InParams.OperatorSettings,
-                                                           Inputs.GetOrCreateDefaultDataReadReference<FConcordMetasoundTrackerModuleAsset>("Tracker Module", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<FConcordMetasoundPatternAsset>("Pattern", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<FTrigger>("Start", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<FTrigger>("Stop", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<int32>("BPM", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<int32>("Lines per Beat", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<int32>("Start Line", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<int32>("Number of Lines", InParams.OperatorSettings),
-                                                           Inputs.GetOrCreateDefaultDataReadReference<bool>("Loop", InParams.OperatorSettings));
 }
 
-const FVertexInterface& FConcordTrackerModulePlayerNode::DeclareVertexInterface()
-{
-    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertex<FConcordMetasoundTrackerModuleAsset>("Tracker Module", { INVTEXT("The tracker module to play."), INVTEXT("Tracker Module") }),
-                                                                        TInputDataVertex<FConcordMetasoundPatternAsset>("Pattern", { INVTEXT("The pattern to play."), INVTEXT("Pattern") }),
-                                                                        TInputDataVertex<FTrigger>("Start", { INVTEXT("Start the Player."), INVTEXT("Start") }),
-                                                                        TInputDataVertex<FTrigger>("Stop", { INVTEXT("Stop the Player."), INVTEXT("Stop") }),
-                                                                        TInputDataVertex<int32>("BPM", { INVTEXT("The playback speed."), INVTEXT("BPM") }, 120),
-                                                                        TInputDataVertex<int32>("Lines per Beat", { INVTEXT("The number of lines that make up a beat."), INVTEXT("Lines per Beat") }, 4),
-                                                                        TInputDataVertex<int32>("Start Line", { INVTEXT("The line to start the Player at."), INVTEXT("Start Line") }, 0),
-                                                                        TInputDataVertex<int32>("Number of Lines", { INVTEXT("The number of lines to play."), INVTEXT("Number of Lines") }, 32),
-                                                                        TInputDataVertex<bool>("Loop", { INVTEXT("Loop the Player instead of stopping when finished."), INVTEXT("Loop") }, true)),
-                                                  FOutputVertexInterface(TOutputDataVertex<FAudioBuffer>("Out Left", { INVTEXT("Left Audio Output"), INVTEXT("Out Left") }),
-                                                                         TOutputDataVertex<FAudioBuffer>("Out Right", { INVTEXT("Right Audio Output"), INVTEXT("Out Right") })));
-    return VertexInterface;
-}
 
-const FNodeClassMetadata& FConcordTrackerModulePlayerNode::GetNodeInfo()
+const FNodeClassMetadata& Metasound::FConcordTrackerModulePlayerOperator::GetNodeInfo()
 {
     auto InitNodeInfo = []() -> FNodeClassMetadata
     {
@@ -49,7 +23,7 @@ const FNodeClassMetadata& FConcordTrackerModulePlayerNode::GetNodeInfo()
         Info.Description = INVTEXT("Plays back an Impulse Tracker Module with Concord Pattern information.");
         Info.Author = TEXT("Jan Klimaschewski");
         Info.PromptIfMissing = INVTEXT("Missing :(");
-        Info.DefaultInterface = DeclareVertexInterface();
+        Info.DefaultInterface = GetVertexInterface();
 
         return Info;
     };
@@ -59,14 +33,39 @@ const FNodeClassMetadata& FConcordTrackerModulePlayerNode::GetNodeInfo()
     return Info;
 }
 
-FConcordTrackerModulePlayerNode::FConcordTrackerModulePlayerNode(const FVertexName& InName, const FGuid& InInstanceID)
-    :	FNode(InName, InInstanceID, GetNodeInfo())
-    ,	Factory(MakeOperatorFactoryRef<FConcordTrackerModulePlayerNode::FOperatorFactory>())
-    ,	Interface(DeclareVertexInterface())
-{}
-FConcordTrackerModulePlayerNode::FConcordTrackerModulePlayerNode(const FNodeInitData& InInitData)
-    : FConcordTrackerModulePlayerNode(InInitData.InstanceName, InInitData.InstanceID)
-{}
+const FVertexInterface& Metasound::FConcordTrackerModulePlayerOperator::GetVertexInterface()
+{
+    static const FVertexInterface VertexInterface(FInputVertexInterface(TInputDataVertexModel<FConcordMetasoundTrackerModuleAsset>("Tracker Module", INVTEXT("The tracker module to play.")),
+        TInputDataVertexModel<FConcordMetasoundPatternAsset>("Pattern", INVTEXT("The pattern to play.")),
+        TInputDataVertexModel<FTrigger>("Start", INVTEXT("Start the Player.")),
+        TInputDataVertexModel<FTrigger>("Stop", INVTEXT("Stop the Player.")),
+        TInputDataVertexModel<int32>("BPM", INVTEXT("The playback speed."), 120),
+        TInputDataVertexModel<int32>("Lines per Beat", INVTEXT("The number of lines that make up a beat."), 4),
+        TInputDataVertexModel<int32>("Start Line", INVTEXT("The line to start the Player at."), 0),
+        TInputDataVertexModel<int32>("Number of Lines", INVTEXT("The number of lines to play."), 32),
+        TInputDataVertexModel<bool>("Loop", INVTEXT("Loop the Player instead of stopping when finished."), true)),
+        FOutputVertexInterface(TOutputDataVertexModel<FAudioBuffer>("Out Left", INVTEXT("Left Audio Output")),
+            TOutputDataVertexModel<FAudioBuffer>("Out Right", INVTEXT("Right Audio Output"))));
+    return VertexInterface;
+}
+
+TUniquePtr<IOperator> Metasound::FConcordTrackerModulePlayerOperator::CreateOperator(const FCreateOperatorParams& InParams, FBuildErrorArray& OutErrors)
+{
+    const FConcordTrackerModulePlayerNode& Node = static_cast<const FConcordTrackerModulePlayerNode&>(InParams.Node);
+    const FDataReferenceCollection& Inputs = InParams.InputDataReferences;
+    const FInputVertexInterface& InputInterface = GetVertexInterface().GetInputInterface();
+
+    return MakeUnique<FConcordTrackerModulePlayerOperator>(InParams.OperatorSettings,
+        Inputs.GetDataReadReferenceOrConstruct<FConcordMetasoundTrackerModuleAsset>("Tracker Module"),
+        Inputs.GetDataReadReferenceOrConstruct<FConcordMetasoundPatternAsset>("Pattern"),
+        Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Start", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstruct<FTrigger>("Stop", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "BPM", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Lines per Beat", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Start Line", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<int32>(InputInterface, "Number of Lines", InParams.OperatorSettings),
+        Inputs.GetDataReadReferenceOrConstructWithVertexDefault<bool>(InputInterface, "Loop", InParams.OperatorSettings));
+}
 
 FDataReferenceCollection FConcordTrackerModulePlayerOperator::GetInputs() const
 {
@@ -345,3 +344,5 @@ void FConcordTrackerModulePlayerOperator::ClearPattern()
             event.f2t = 0; event.f2p = 0;
         }
 }
+
+
