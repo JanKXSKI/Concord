@@ -1,3 +1,6 @@
+# Pleas Note
+Concord is no longer being actively developed.
+
 # Concord
 Concord is an Unreal Engine plugin for sampling symbolic music from graphical probabilistic models in real time. Put another way, Concord lets you create and play intricate musical dice games. It aims to enable intuitive editing and efficient sampling in an interactive setting by leveraging the considerable capabilities and flexibility of the Unreal Engine.
 
