@@ -2,7 +2,7 @@
     "FileVersion": 3,
     "Version": 1,
     "VersionName": "1.0",
-    "EngineVersion": "5.1.0",
+    "EngineVersion": "5.3.0",
     "FriendlyName": "Concord",
     "Description": "Tools for creating and sampling from graphical probabilistic models that allow for real-time and adaptive generation of symbolic music. This is a beta! Please share bug reports, suggestions and comments on the subreddit: reddit.com/r/ConcordUE",
     "Category": "AI",
