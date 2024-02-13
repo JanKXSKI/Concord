@@ -20,7 +20,7 @@ public:
         , ModuleDataPtr(InModuleDataPtr)
     {}
     FConcordTrackerModuleProxy(const FConcordTrackerModuleProxy& Other) = default;
-    Audio::IProxyDataPtr Clone() const override { return MakeUnique<FConcordTrackerModuleProxy>(*this); }
+   Audio::IProxyDataPtr Clone() const override { return MakeUnique<FConcordTrackerModuleProxy>(*this); }
     FGuid Guid;
     TSharedPtr<TArray<uint8>> ModuleDataPtr;
 };

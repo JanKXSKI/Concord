@@ -177,7 +177,7 @@ public:
     bool DoesPreferenceRuleApply(const FConcordExpressionContext<float>& Context) const
     {
         const int32 TargetNumNotes = SourceExpressions[FBase::NumAdditionalSourceExpressions]->ComputeValue(Context).Int;
-        FNoteVisitor NoteVisitor { GetDegreeExpressions(), 0 };
+        FNoteVisitor NoteVisitor {{ GetDegreeExpressions(), 0 }};
         NoteVisitor(Context);
         return NoteVisitor.NumNotes == TargetNumNotes;
     }
